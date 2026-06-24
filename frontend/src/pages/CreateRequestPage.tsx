@@ -1,5 +1,5 @@
 import { useState, type SubmitEventHandler } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   createServiceRequest,
   type RequestCategory,
