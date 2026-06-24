@@ -1,0 +1,66 @@
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #111827;
+  background-color: #f6f7fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: #111827;
+  background-color: #f6f7fb;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: #111827;
+}
+
+input,
+textarea,
+select {
+  background-color: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+button {
+  background-color: white;
+  color: #111827;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #f3f4f6;
+}
+
+a {
+  color: #2563eb;
+}
+
+a:hover {
+  color: #1d4ed8;
+}
+
+h1,
+h2,
+h3,
+p,
+label,
+span,
+td,
+th,
+small {
+  color: #111827;
+}
