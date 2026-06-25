@@ -25,17 +25,19 @@ app = FastAPI(
     version="0.2.0"
 )
 
+allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://localhost:5174"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174"
-
-    ],
+    allow_origins=[origin.strip() for origin in allowed_origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
