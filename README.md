@@ -486,6 +486,7 @@ requestflow/
 
 - The project is currently designed for local development and portfolio demonstration.
 - The project is deployed for portfolio demonstration, but production hardening is still limited.
+- The deployed backend may take longer to respond after inactivity because the Render free web service can spin down and wake on the next request.
 - Admin account promotion is currently done manually through PostgreSQL.
 - Frontend automated tests are not yet added.
 - The backend currently uses SQLAlchemy table creation for development rather than a full migration tool such as Alembic.
