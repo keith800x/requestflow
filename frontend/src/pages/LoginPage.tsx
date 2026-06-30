@@ -8,11 +8,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => 
   {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
     try {
       const tokenResponse = await loginUser({
@@ -24,7 +26,11 @@ export default function LoginPage() {
 
       navigate("/dashboard");
     } catch {
-      setError("Login failed. Please check your email and password.");
+      setError(
+      "Login failed. Please check your email and password. If this is the first request in a while, the backend may still be waking up."
+    );
+    } finally {
+    setIsSubmitting(false);
     }
   };
 
@@ -63,7 +69,16 @@ export default function LoginPage() {
 
           {error && <p style={{ color: "red" }}>{error}</p>}
 
-          <button type="submit">Login</button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            style={{
+              opacity: isSubmitting ? 0.7 : 1,
+              cursor: isSubmitting ? "not-allowed" : "pointer",
+            }}
+          >
+            {isSubmitting ? "Logging in..." : "Login"}
+          </button>
         </form>
 
         <p>

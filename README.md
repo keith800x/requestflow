@@ -9,9 +9,13 @@
 
 A full-stack IT service request tracker that allows users to submit and track IT support requests, while admins can manage all requests, update statuses, delete requests, and add internal notes.
 
-<!-- 
 ![Screenshot](assets/AppUIScreenshot.png)
--->
+
+## Live Demo
+
+Frontend: https://requestflow-silk.vercel.app/
+Backend API Docs: https://requestflow-backend.onrender.com/docs
+
 ---
 
 ## Problem
@@ -87,7 +91,7 @@ To improve reliability and maintainability, the project includes:
 | Password Hashing | pwdlib / Argon2 |
 | Testing | Pytest |
 | Containerization | Docker, Docker Compose |
-| CI/CD | GitHub Actions |
+| CI/CD | GitHub Actions, Vercel, Render |
 | Version Control | Git and GitHub |
 
 ---
@@ -151,25 +155,35 @@ cd requestflow
 
 ---
 
-### Environment Variables
+### Local Environment Variables
 
-The project uses environment variables for backend configuration.
+The project uses environment variables for backend and frontend configuration.
 
-An example file is provided at:
+Example environment files are provided at:
 
 ```text
 backend/.env.example
+frontend/.env.example
 ```
 
-Example:
+Backend example:
 
 ```env
 DATABASE_URL=postgresql+psycopg://requestflow_user:requestflow_password@localhost:5432/requestflow_db
 JWT_SECRET_KEY=change-this-in-production
 ENVIRONMENT=development
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:5174
+```
+
+Frontend example:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 For the current Docker Compose setup, the backend `DATABASE_URL` is already provided inside `docker-compose.yml`.
+
+For deployed environments, production values are configured in Render and Vercel dashboards instead of local .env files.
 
 Do not commit a real `.env` file to GitHub.
 
@@ -376,6 +390,26 @@ Workflow file:
 
 ---
 
+## Deployment
+
+The application is deployed using:
+
+| Component | Platform |
+|---|---|
+| Frontend | Vercel |
+| Backend API | Render Web Service |
+| Database | Render PostgreSQL |
+| CI | GitHub Actions |
+
+Deployment flow:
+
+```text
+Push to GitHub master branch
+→ GitHub Actions runs backend tests, frontend build, and Docker build checks
+→ Vercel redeploys the frontend
+→ Render redeploys the backend
+```
+
 ## API Overview
 
 | Method | Endpoint | Description | Access |
@@ -451,7 +485,7 @@ requestflow/
 ### Limitations
 
 - The project is currently designed for local development and portfolio demonstration.
-- Deployment is not yet configured.
+- The project is deployed for portfolio demonstration, but production hardening is still limited.
 - Admin account promotion is currently done manually through PostgreSQL.
 - Frontend automated tests are not yet added.
 - The backend currently uses SQLAlchemy table creation for development rather than a full migration tool such as Alembic.
@@ -467,7 +501,7 @@ requestflow/
 - Add request analytics dashboard.
 - Add frontend tests with Vitest or React Testing Library.
 - Add database migrations with Alembic.
-- Add production deployment for frontend, backend, and PostgreSQL.
+- Improve production deployment with database migrations, stronger monitoring, and automated release checks.
 - Add email notifications for request updates.
 - Add file attachment support for service requests.
 - Add audit logs for admin actions.
