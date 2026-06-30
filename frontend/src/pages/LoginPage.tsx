@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <main style={{ margin: "40px auto", padding: "0 16px" }}>
       <header style={{ textAlign: "center", marginBottom: "32px" }}>
-        <h1>Requestflow</h1>
+        <h1>RequestFlow</h1>
         <p style={{ color: "#666" }}>
           Submit, track, and manage IT service requests.
         </p>
