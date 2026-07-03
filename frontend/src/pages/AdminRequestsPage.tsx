@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import RequestFilterBar from "../components/RequestFilterBar";
+
+import {
+  filterAndSortRequests,
+  type RequestFilterValues,
+} from "../utils/requestFilters";
+
 import {
   deleteServiceRequest,
   getAllRequests,
@@ -7,7 +14,16 @@ import {
   type RequestStatus,
   type ServiceRequest,
 } from "../api/requestApi";
+
 import { getCurrentUser, type User } from "../api/authApi";
+
+const defaultFilters: RequestFilterValues = {
+  search: "",
+  status: "All",
+  category: "All",
+  priority: "All",
+  sort: "newest",
+};
 
 const statuses: RequestStatus[] = [
   "Open",
@@ -17,43 +33,54 @@ const statuses: RequestStatus[] = [
 ];
 
 export default function AdminRequestsPage() {
-  const navigate = useNavigate();
 
   const [user, setUser] = useState<User | null>(null);
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [filters, setFilters] = useState<RequestFilterValues>(defaultFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function loadAdminData() {
-      try {
-        const currentUser = await getCurrentUser();
 
-        if (currentUser.role !== "ADMIN") {
-          setError("You do not have admin access.");
-          return;
-        }
+  const filteredRequests = useMemo(() => {
+    return filterAndSortRequests(requests, filters);
+  }, [requests, filters]);
 
-        setUser(currentUser);
+  async function loadAdminData() {
+    setIsLoading(true);
+    setError("");
 
-        const requestData = await getAllRequests();
-        setRequests(requestData);
-      } catch {
-        setError("Failed to load all requests. Please login again.");
-        localStorage.removeItem("access_token");
-        navigate("/");
-      } finally {
-        setIsLoading(false);
+    try {
+      const currentUser = await getCurrentUser();
+
+      if (currentUser.role !== "ADMIN") {
+        setError("You do not have admin access.");
+        return;
       }
-    }
 
+      setUser(currentUser);
+
+      const requestData = await getAllRequests();
+      setRequests(requestData);
+    } catch {
+      setError(
+        "Failed to load all requests. The backend may still be waking up. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
     loadAdminData();
-  }, [navigate]);
+  }, []);
+
 
   async function handleStatusChange(
     requestId: number,
     newStatus: RequestStatus
   ) {
+    setError("");
+
     try {
       const updatedRequest = await updateServiceRequest(requestId, {
         status: newStatus,
@@ -65,7 +92,7 @@ export default function AdminRequestsPage() {
         )
       );
     } catch {
-      setError("Failed to update request status.");
+      setError("Failed to update request status. Please try again.");
     }
   }
 
@@ -77,6 +104,9 @@ export default function AdminRequestsPage() {
   if (!confirmed) {
     return;
   }
+
+    setError("");
+
 
   try {
     await deleteServiceRequest(requestId);
@@ -103,70 +133,91 @@ export default function AdminRequestsPage() {
 
       {isLoading && <p>Loading all requests...</p>}
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {!isLoading && error && (
+        <div>
+          <p style={{ color: "red" }}>{error}</p>
+          <button type="button" onClick={loadAdminData}>
+            Try Again
+          </button>
+        </div>
+      )}
+
 
       {!isLoading && !error && requests.length === 0 && (
         <p>No service requests found.</p>
       )}
 
       {!isLoading && requests.length > 0 && (
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-          }}
-        >
-          <thead>
-            <tr>
-              <th style={tableHeaderStyle}>ID</th>
-              <th style={tableHeaderStyle}>Title</th>
-              <th style={tableHeaderStyle}>Category</th>
-              <th style={tableHeaderStyle}>Priority</th>
-              <th style={tableHeaderStyle}>Status</th>
-              <th style={tableHeaderStyle}>Created By</th>
-              <th style={tableHeaderStyle}>Created</th>
-              <th style={tableHeaderStyle}>Actions</th>
-            </tr>
-          </thead>
 
-          <tbody>
-            {requests.map((request) => (
-              <tr key={request.id}>
-                <td style={tableCellStyle}>{request.id}</td>
-                <td style={tableCellStyle}>
-                  <Link to={`/requests/${request.id}`}>{request.title}</Link>
-                </td>
-                <td style={tableCellStyle}>{request.category}</td>
-                <td style={tableCellStyle}>{request.priority}</td>
-                <td style={tableCellStyle}>
-                  <select
-                    value={request.status}
-                    onChange={(event) =>
-                      handleStatusChange(
-                        request.id,
-                        event.target.value as RequestStatus
-                      )
-                    }
-                  >
-                    {statuses.map((statusOption) => (
-                      <option key={statusOption} value={statusOption}>
-                        {statusOption}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td style={tableCellStyle}>{request.created_by_id}</td>
-                <td style={tableCellStyle}>
-                  {new Date(request.created_at).toLocaleString()}
-                </td>
+        <>
+            <RequestFilterBar
+              filters={filters}
+              onChange={setFilters}
+              onClear={() => setFilters(defaultFilters)}
+            />
 
-                <td style={tableCellStyle}>
-                  <button onClick={() => handleDelete(request.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            {filteredRequests.length === 0 ? (
+            <p>No requests match the current filters.</p>
+          ) : (
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+              }}
+            >
+              <thead>
+                <tr>
+                  <th style={tableHeaderStyle}>ID</th>
+                  <th style={tableHeaderStyle}>Title</th>
+                  <th style={tableHeaderStyle}>Category</th>
+                  <th style={tableHeaderStyle}>Priority</th>
+                  <th style={tableHeaderStyle}>Status</th>
+                  <th style={tableHeaderStyle}>Created By</th>
+                  <th style={tableHeaderStyle}>Created</th>
+                  <th style={tableHeaderStyle}>Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td style={tableCellStyle}>{request.id}</td>
+                    <td style={tableCellStyle}>
+                      <Link to={`/requests/${request.id}`}>{request.title}</Link>
+                    </td>
+                    <td style={tableCellStyle}>{request.category}</td>
+                    <td style={tableCellStyle}>{request.priority}</td>
+                    <td style={tableCellStyle}>
+                      <select
+                        value={request.status}
+                        onChange={(event) =>
+                          handleStatusChange(
+                            request.id,
+                            event.target.value as RequestStatus
+                          )
+                        }
+                      >
+                        {statuses.map((statusOption) => (
+                          <option key={statusOption} value={statusOption}>
+                            {statusOption}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={tableCellStyle}>{request.created_by_id}</td>
+                    <td style={tableCellStyle}>
+                      {new Date(request.created_at).toLocaleString()}
+                    </td>
+
+                    <td style={tableCellStyle}>
+                      <button onClick={() => handleDelete(request.id)}>Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
       )}
     </main>
   );

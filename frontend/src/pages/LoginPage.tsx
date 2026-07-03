@@ -46,8 +46,9 @@ export default function LoginPage() {
       <section style={{ maxWidth: "420px", margin: "0 auto" }}>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: "12px" }}>
-            <label>Email</label>
-            <input
+            <label htmlFor="email">Email</label>
+            <input 
+              id="email"
               style={{ display: "block", width: "100%", padding: "8px" }}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -57,8 +58,9 @@ export default function LoginPage() {
           </div>
 
           <div style={{ marginBottom: "12px" }}>
-            <label>Password</label>
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               style={{ display: "block", width: "100%", padding: "8px" }}
               value={password}
               onChange={(event) => setPassword(event.target.value)}

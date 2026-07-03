@@ -1,8 +1,9 @@
 # RequestFlow — IT Service Request Tracker
 
-![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-blue)
+![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript%20%2B%20Vite-blue)
 ![Backend](https://img.shields.io/badge/Backend-FastAPI-green)
 ![Database](https://img.shields.io/badge/Database-PostgreSQL-blue)
+![Testing](https://img.shields.io/badge/Testing-Pytest%20%2B%20Vitest-yellow)
 ![Container](https://img.shields.io/badge/Container-Docker-blue)
 ![CI](https://github.com/keith800x/requestflow/actions/workflows/ci.yml/badge.svg?branch=master)
 ![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
@@ -35,11 +36,15 @@ This project helps simulate a basic internal IT help desk workflow where:
 
 ## Approach
 
-RequestFlow is built as a full-stack web application using a separated frontend and backend architecture.
+RequestFlow is built as a full-stack web application with a separated frontend, backend, and database architecture.
 
-The frontend is a React and TypeScript application that provides the user interface, protected routes, role-based navigation, request forms, request tables, and comment views.
+The frontend is a React and TypeScript application that provides the user interface, protected routes, role-based navigation, request forms, request tables, loading/error states, and comment views.
 
-The backend is a FastAPI application that handles authentication, authorization, request management, comment management, and database access.
+The backend is a FastAPI application that handles authentication, authorization, request management, comment management, role-based access control, and database access.
+
+The application uses JWT-based authentication. After logging in, the frontend stores the access token and includes it in future API requests. The backend validates the token and checks the user's role before returning protected data.
+
+The authentication and authorization flow is:
 
 The application flow is:
 
@@ -49,6 +54,7 @@ User logs in
 → backend returns JWT access token
 → frontend stores token
 → frontend sends token with API requests
+→ backend validates token
 → backend checks user role
 → user/admin receives allowed request data
 ```
@@ -72,7 +78,7 @@ To improve reliability and maintainability, the project includes:
 - **Comment support** for request discussion.
 - **Internal admin notes** that are hidden from normal users.
 - **Docker Compose** for running the backend and PostgreSQL locally.
-- **GitHub Actions CI** for backend tests, frontend build checks, and Docker build validation.
+- **GitHub Actions CI** for backend tests, frontend component tests, frontend build checks, and Docker build validation.
 
 ---
 
@@ -89,7 +95,7 @@ To improve reliability and maintainability, the project includes:
 | Database | PostgreSQL |
 | Authentication | JWT |
 | Password Hashing | pwdlib / Argon2 |
-| Testing | Pytest |
+| Testing | Pytest, Vitest, React Testing Library |
 | Containerization | Docker, Docker Compose |
 | CI/CD | GitHub Actions, Vercel, Render |
 | Version Control | Git and GitHub |
@@ -116,6 +122,7 @@ Successful behaviours tested:
 - Protected frontend routes from unauthenticated users.
 - Hid admin navigation links from normal users.
 - Ran backend tests with Pytest.
+- Ran frontend component tests using Vitest and React Testing Library to verify core pages and role-based navigation behaviour.
 - Built the frontend successfully with Vite.
 - Verified backend Docker image build through GitHub Actions.
 
@@ -164,13 +171,14 @@ Example environment files are provided at:
 ```text
 backend/.env.example
 frontend/.env.example
+.env.remote.example
 ```
 
 Backend example:
 
 ```env
 DATABASE_URL=postgresql+psycopg://requestflow_user:requestflow_password@localhost:5432/requestflow_db
-JWT_SECRET_KEY=change-this-in-production
+JWT_SECRET_KEY=dev-secret-key-change-this-later
 ENVIRONMENT=development
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:5174
 ```
@@ -181,15 +189,20 @@ Frontend example:
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-For the current Docker Compose setup, the backend `DATABASE_URL` is already provided inside `docker-compose.yml`.
+Remote frontend testing example:
 
-For deployed environments, production values are configured in Render and Vercel dashboards instead of local .env files.
+```env
+DEPLOYED_BACKEND_URL=https://your-render-backend-url.onrender.com
+```
 
-Do not commit a real `.env` file to GitHub.
+For the Docker Compose local setup, the required backend and frontend environment variables are already provided inside `docker-compose.yml`.
 
+For deployed environments, production values are configured in the Render and Vercel dashboards instead of local `.env` files.
+
+Do not commit real `.env` files to GitHub.
 ---
 
-### Run Backend and Database
+### Run the Full Local Stack
 
 From the project root:
 
@@ -197,10 +210,12 @@ From the project root:
 docker compose up --build
 ```
 
-The backend API will be available at:
+This starts:
 
 ```text
-http://localhost:8000
+Frontend:  http://localhost:5173
+Backend:   http://localhost:8000
+Database:  PostgreSQL container on localhost:5432
 ```
 
 FastAPI Swagger documentation:
@@ -209,17 +224,22 @@ FastAPI Swagger documentation:
 http://localhost:8000/docs
 ```
 
----
-
-### Run Frontend
-
-Open a second terminal.
+To stop the local stack:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+docker compose down
 ```
+
+To stop the local stack and remove the local PostgreSQL Docker volume:
+
+```bash
+docker compose down -v
+```
+
+Use `down -v` only when you want to reset the local database data.
+
+---
+
 
 The frontend will be available at:
 
@@ -228,6 +248,44 @@ http://localhost:5173
 ```
 
 ---
+
+### Optional: Run Local Frontend Against Deployed Backend
+
+This mode is useful for testing the deployed Render backend with a local frontend.
+
+Create a local `.env.remote` file from the example:
+
+```bash
+cp .env.remote.example .env.remote
+```
+
+Then update `.env.remote` with your deployed backend URL:
+
+```env
+DEPLOYED_BACKEND_URL=https://your-render-backend-url.onrender.com
+```
+
+Run:
+
+```bash
+docker compose --env-file .env.remote -f docker-compose.frontend-remote.yml up --build
+```
+
+The local frontend will be available at:
+
+```text
+http://localhost:5173
+```
+
+In this mode:
+
+```text
+Local Docker frontend
+→ deployed Render backend
+→ deployed Render PostgreSQL database
+```
+
+The real `.env.remote` file should not be committed to GitHub.
 
 ## Usage Examples
 
@@ -340,13 +398,29 @@ The internal note is visible to admins but hidden from normal users.
 
 ## Running Tests
 
+The project includes backend and frontend tests.
+
 ### Backend Tests
+
+Backend tests are written with Pytest and cover authentication, request management, role-based access control, and comments.
 
 From the backend folder:
 
 ```bash
 cd backend
 python -m pytest
+```
+
+---
+
+### Frontend Tests
+
+Frontend tests are written with Vitest and React Testing Library. They cover core UI behaviour such as login rendering, registration rendering, request form rendering, and role-based navigation.
+
+From the frontend folder:
+```bash
+cd frontend
+npm test
 ```
 
 ---
@@ -379,8 +453,11 @@ This project uses GitHub Actions to automatically check the project on push and 
 The workflow currently checks:
 
 - Backend tests with Pytest.
+- Frontend tests with Vitest
 - Frontend production build.
 - Backend Docker image build.
+
+This helps ensure that backend logic, frontend UI behaviour, and build configuration remain working before deployment.
 
 Workflow file:
 
@@ -405,7 +482,7 @@ Deployment flow:
 
 ```text
 Push to GitHub master branch
-→ GitHub Actions runs backend tests, frontend build, and Docker build checks
+→ GitHub Actions runs backend tests, run frontend component tests, frontend build, and Docker build checks
 → Vercel redeploys the frontend
 → Render redeploys the backend
 ```
@@ -434,48 +511,53 @@ Push to GitHub master branch
 requestflow/
 ├── backend/
 │   ├── app/
-│   │   ├── models/                  # SQLAlchemy database models
-│   │   ├── routers/                 # FastAPI route handlers
-│   │   ├── schemas/                 # Pydantic request/response schemas
-│   │   ├── services/                # Security and helper services
-│   │   ├── tests/                   # Pytest backend tests
-│   │   ├── auth_dependencies.py     # Authentication and admin dependencies
-│   │   ├── database.py              # Database engine and session setup
-│   │   ├── enums.py                 # Shared enum values
-│   │   └── main.py                  # FastAPI application entry point
-│   ├── Dockerfile                   # Backend Docker image
-│   ├── requirements.txt             # Backend dependencies
-│   └── .env.example                 # Example backend environment variables
+│   │   ├── models/                    # SQLAlchemy database models
+│   │   ├── routers/                   # FastAPI route handlers
+│   │   ├── schemas/                   # Pydantic request/response schemas
+│   │   ├── services/                  # Security and helper services
+│   │   ├── tests/                     # Pytest backend tests
+│   │   ├── auth_dependencies.py       # Authentication and admin dependencies
+│   │   ├── database.py                # Database engine and session setup
+│   │   ├── enums.py                   # Shared enum values
+│   │   └── main.py                    # FastAPI application entry point
+│   ├── Dockerfile                     # Backend Docker image
+│   ├── requirements.txt               # Backend dependencies
+│   └── .env.example                   # Example backend environment variables
 │
 ├── frontend/
-│   ├── public/                     # Static public assets served directly by Vite
+│   ├── public/                        # Static public assets
 │   ├── src/
-│   │   ├── api/                     # Axios API clients
-│   │   ├── components/              # Shared layout and route guards
-│   │   ├── pages/                   # React page components
-│   │   ├── App.tsx                  # Frontend route configuration
-│   │   ├── main.tsx                 # React entry point
-│   │   └── index.css                # Global styling
-│   ├── index.html                   # Vite HTML entry point
-│   ├── package.json                 # Frontend scripts and dependencies
-│   ├── package-lock.json            # Locked npm dependencies
-│   ├── vite.config.ts               # Vite configuration
-│   ├── eslint.config.js             # ESLint configuration
-│   ├── tsconfig.json                # Main TypeScript configuration
-│   ├── tsconfig.app.json            # TypeScript config for frontend app code
-│   └── tsconfig.node.json           # TypeScript config for Node/Vite config files
+│   │   ├── api/                       # Axios API clients
+│   │   ├── assets/                    # Frontend assets imported by React
+│   │   ├── components/                # Shared layout and route guards
+│   │   ├── pages/                     # React page components and page tests
+│   │   ├── test/                      # Vitest and React Testing Library setup
+│   │   ├── App.tsx                    # Frontend route configuration
+│   │   ├── main.tsx                   # React entry point
+│   │   └── index.css                  # Global styling
+│   ├── index.html                     # Vite HTML entry point
+│   ├── package.json                   # Frontend scripts and dependencies
+│   ├── package-lock.json              # Locked npm dependencies
+│   ├── vite.config.ts                 # Vite and Vitest configuration
+│   ├── eslint.config.js               # ESLint configuration
+│   ├── tsconfig.json                  # Main TypeScript configuration
+│   ├── tsconfig.app.json              # TypeScript config for frontend app code
+│   ├── tsconfig.node.json             # TypeScript config for Node/Vite config files
+│   └── .env.example                   # Example frontend environment variables
 │
 ├── assets/
-│   └── AppUIScreenshot.png          # Screenshot for README
+│   └── AppUIScreenshot.png            # Screenshot for README
 │
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                   # GitHub Actions CI workflow
+│       └── ci.yml                     # GitHub Actions CI workflow
 │
-├── docker-compose.yml               # Backend and PostgreSQL local setup
-├── .gitignore                       # Git ignore rules
-├── README.md                        # Project documentation
-└── LICENSE                          # Project license
+├── docker-compose.yml                 # Local frontend, backend, and PostgreSQL setup
+├── docker-compose.frontend-remote.yml # Local frontend connected to deployed backend
+├── .env.remote.example                # Example env file for remote backend testing
+├── .gitignore                         # Git ignore rules
+├── README.md                          # Project documentation
+└── LICENSE                            # Project license
 ```
 
 ---
@@ -488,7 +570,6 @@ requestflow/
 - The project is deployed for portfolio demonstration, but production hardening is still limited.
 - The deployed backend may take longer to respond after inactivity because the Render free web service can spin down and wake on the next request.
 - Admin account promotion is currently done manually through PostgreSQL.
-- Frontend automated tests are not yet added.
 - The backend currently uses SQLAlchemy table creation for development rather than a full migration tool such as Alembic.
 - User management is limited; admins cannot yet promote or demote users through the frontend.
 - The UI is functional but can be further polished with better styling, loading states, and validation messages.
@@ -500,7 +581,6 @@ requestflow/
 - Add search, filter, and sorting for requests.
 - Add request assignment to specific admins or support staff.
 - Add request analytics dashboard.
-- Add frontend tests with Vitest or React Testing Library.
 - Add database migrations with Alembic.
 - Improve production deployment with database migrations, stronger monitoring, and automated release checks.
 - Add email notifications for request updates.

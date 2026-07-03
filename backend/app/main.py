@@ -13,6 +13,17 @@ from app.routers import auth_router, comment_router, request_router
 from fastapi.middleware.cors import CORSMiddleware
 # Create database tables.
 # Later, we can replace this with Alembic migrations.
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+
+if ENVIRONMENT == "production" and not JWT_SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY must be set in production.")
+
+if not JWT_SECRET_KEY:
+    JWT_SECRET_KEY = "dev-secret-key-change-this-later"
+
 if os.getenv("ENVIRONMENT") != "test":
     # Create database tables.
     # Later, we can replace this with Alembic migrations.

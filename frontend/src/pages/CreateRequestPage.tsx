@@ -55,8 +55,9 @@ export default function CreateRequestPage() {
 
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "12px" }}>
-          <label>Title</label>
+          <label htmlFor="title">Title</label>
           <input
+            id="title"
             style={{ display: "block", width: "100%", padding: "8px" }}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -65,8 +66,9 @@ export default function CreateRequestPage() {
         </div>
 
         <div style={{ marginBottom: "12px" }}>
-          <label>Description</label>
+          <label htmlFor="description">Description</label>
           <textarea
+            id="description"
             style={{
               display: "block",
               width: "100%",
@@ -80,8 +82,9 @@ export default function CreateRequestPage() {
         </div>
 
         <div style={{ marginBottom: "12px" }}>
-          <label>Category</label>
+          <label htmlFor="category">Category</label>
           <select
+            id="category"
             style={{ display: "block", width: "100%", padding: "8px" }}
             value={category}
             onChange={(event) =>
@@ -97,8 +100,9 @@ export default function CreateRequestPage() {
         </div>
 
         <div style={{ marginBottom: "12px" }}>
-          <label>Priority</label>
+          <label htmlFor="priority">Priority</label>
           <select
+            id="priority"
             style={{ display: "block", width: "100%", padding: "8px" }}
             value={priority}
             onChange={(event) =>
