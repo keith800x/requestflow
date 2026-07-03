@@ -14,6 +14,8 @@ import {
   type Comment,
 } from "../api/commentApi";
 
+import { formatDateTime } from "../utils/dateFormat";
+
 const statuses: RequestStatus[] = [
   "Open",
   "In Progress",
@@ -172,7 +174,7 @@ export default function RequestDetailPage() {
 
         <p>
           <strong>Created:</strong>{" "}
-          {new Date(serviceRequest.created_at).toLocaleString()}
+          {formatDateTime(serviceRequest.created_at)}
         </p>
 
         {isAdmin && (
@@ -226,7 +228,7 @@ export default function RequestDetailPage() {
 
             <small>
               User ID: {comment.user_id} |{" "}
-              {new Date(comment.created_at).toLocaleString()}
+              {new Date(serviceRequest.created_at).toLocaleString()}
               {comment.is_internal_note && (
                 <strong style={{ color: "darkred" }}> | Internal Note</strong>
               )}

@@ -17,6 +17,8 @@ import {
 
 import { getCurrentUser, type User } from "../api/authApi";
 
+import { formatDateTime } from "../utils/dateFormat";
+
 const defaultFilters: RequestFilterValues = {
   search: "",
   status: "All",
@@ -206,7 +208,7 @@ export default function AdminRequestsPage() {
                     </td>
                     <td style={tableCellStyle}>{request.created_by_id}</td>
                     <td style={tableCellStyle}>
-                      {new Date(request.created_at).toLocaleString()}
+                      {formatDateTime(request.created_at)}
                     </td>
 
                     <td style={tableCellStyle}>

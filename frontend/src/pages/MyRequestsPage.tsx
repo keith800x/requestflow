@@ -7,6 +7,8 @@ import {
   type RequestFilterValues,
 } from "../utils/requestFilters";
 
+import { formatDateTime } from "../utils/dateFormat";
+
 const defaultFilters: RequestFilterValues = {
   search: "",
   status: "All",
@@ -110,7 +112,7 @@ export default function MyRequestsPage() {
                     <td style={tableCellStyle}>{request.priority}</td>
                     <td style={tableCellStyle}>{request.status}</td>
                     <td style={tableCellStyle}>
-                      {new Date(request.created_at).toLocaleString()}
+                      {formatDateTime(request.created_at)}
                     </td>
                   </tr>
                 ))}
