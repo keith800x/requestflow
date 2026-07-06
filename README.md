@@ -5,8 +5,9 @@
 ![Database](https://img.shields.io/badge/Database-PostgreSQL-blue)
 ![Testing](https://img.shields.io/badge/Testing-Pytest%20%2B%20Vitest-yellow)
 ![Container](https://img.shields.io/badge/Container-Docker-blue)
+![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Render-purple)
 ![CI](https://github.com/keith800x/requestflow/actions/workflows/ci.yml/badge.svg?branch=master)
-![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
+![Status](https://img.shields.io/badge/Status-MVP%20Complete-brightgreen)
 
 A full-stack IT service request tracker that allows users to submit and track IT support requests, while admins can manage all requests, update statuses, delete requests, and add internal notes.
 
