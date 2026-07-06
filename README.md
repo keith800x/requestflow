@@ -532,7 +532,9 @@ requestflow/
 │   │   ├── components/                # Shared layout and route guards
 │   │   ├── pages/                     # React page components and page tests
 │   │   ├── test/                      # Vitest and React Testing Library setup
+│   │   ├── utils/                     # Reusable frontend helper functions such as date formatting, error messages, and request filtering
 │   │   ├── App.tsx                    # Frontend route configuration
+│   │   ├── App.css                    # App-level component styling
 │   │   ├── main.tsx                   # React entry point
 │   │   └── index.css                  # Global styling
 │   ├── index.html                     # Vite HTML entry point
