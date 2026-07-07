@@ -228,7 +228,7 @@ export default function RequestDetailPage() {
 
             <small>
               User ID: {comment.user_id} |{" "}
-              {new Date(serviceRequest.created_at).toLocaleString()}
+              {formatDateTime(serviceRequest.created_at)}
               {comment.is_internal_note && (
                 <strong style={{ color: "darkred" }}> | Internal Note</strong>
               )}

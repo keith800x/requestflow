@@ -1,16 +1,20 @@
 import os
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.database import Base, engine
+from app.database import Base, engine, get_db
 from app.models import comment, request, user
 from app.routers import auth_router, comment_router, request_router
 
 from fastapi.middleware.cors import CORSMiddleware
+
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 # Create database tables.
 # Later, we can replace this with Alembic migrations.
 
@@ -100,13 +104,24 @@ def root():
         "message": "RequestFlow API is running."
     }
 
+@app.get("/ready")
+def readiness_check(db: Session = Depends(get_db)):
+    """
+    Readiness check.
+
+    Used by Docker/Kubernetes to check if the API can connect to the database.
+    """
+    db.execute(text("SELECT 1"))
+    return {"status": "ready"}
+
 
 @app.get("/health")
 def health_check():
     """
-    Health check endpoint.
+    Health/Liveness check check endpoint.
 
     Useful for Docker, deployment, and monitoring tools.
+    E.g. It is used by Docker/Kubernetes to check if the API process is running.
     """
 
     return {
