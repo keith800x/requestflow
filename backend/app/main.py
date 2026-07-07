@@ -15,6 +15,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 # Create database tables.
 # Later, we can replace this with Alembic migrations.
 
@@ -36,8 +38,8 @@ if os.getenv("ENVIRONMENT") != "test":
 
 app = FastAPI(
     title="RequestFlow API",
-    description="A mini IT service request tracker backend built with FastAPI.",
-    version="0.2.0"
+    description="Backend API for the RequestFlow IT service request tracker.",
+    version="1.0.0",
 )
 
 allowed_origins = os.getenv(
@@ -53,6 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+Instrumentator().instrument(app).expose(app)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
