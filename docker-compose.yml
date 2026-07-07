@@ -66,3 +66,4 @@ services:
 volumes:
   requestflow_postgres_data:
   requestflow_frontend_node_modules:
+  requestflow_grafana_data:
