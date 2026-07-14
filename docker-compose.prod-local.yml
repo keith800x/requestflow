@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: requestflow-postgres-prod-local
+    environment:
+      POSTGRES_USER: requestflow_user
+      POSTGRES_PASSWORD: requestflow_password
+      POSTGRES_DB: requestflow_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - requestflow_postgres_prod_local_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U requestflow_user -d requestflow_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: requestflow-backend-prod-local
+    environment:
+      DATABASE_URL: postgresql+psycopg://requestflow_user:requestflow_password@postgres:5432/requestflow_db
+      JWT_SECRET_KEY: dev-secret-key-change-this-later
+      ENVIRONMENT: development
+      ALLOWED_ORIGINS: http://localhost:8080
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8000
+    container_name: requestflow-frontend-prod-local
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  requestflow_postgres_prod_local_data:

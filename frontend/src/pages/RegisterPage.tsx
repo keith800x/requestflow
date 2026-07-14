@@ -5,9 +5,9 @@ import { registerUser } from "../api/authApi";
 export default function RegisterPage() {
   const navigate = useNavigate();
 
-  const [name, setName] = useState("Keith");
-  const [email, setEmail] = useState("keith@example.com");
-  const [password, setPassword] = useState("password123");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => 
