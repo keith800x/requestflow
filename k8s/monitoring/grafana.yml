@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: requestflow
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: requestflow-grafana
+  namespace: requestflow
+spec:
+  type: ClusterIP
+
+  selector:
+    app: requestflow-grafana
+
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: requestflow-grafana
+  namespace: requestflow
+spec:
+  replicas: 1
+
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: requestflow-grafana
+
+  template:
+    metadata:
+      labels:
+        app: requestflow-grafana
+
+    spec:
+      securityContext:
+        fsGroup: 472
+
+      containers:
+        - name: grafana
+          image: grafana/grafana:12.4.1
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 3000
+
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: requestflow-secret
+                  key: GRAFANA_ADMIN_USER
+
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: requestflow-secret
+                  key: GRAFANA_ADMIN_PASSWORD
+
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 3
+            timeoutSeconds: 3
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+
+            limits:
+              cpu: "1"
+              memory: 1Gi
+
+          volumeMounts:
+            - name: grafana-data
+              mountPath: /var/lib/grafana
+
+            - name: grafana-datasource
+              mountPath: /etc/grafana/provisioning/datasources
+              readOnly: true
+
+            - name: grafana-dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+              readOnly: true
+
+            - name: grafana-dashboard
+              mountPath: /var/lib/grafana/dashboards
+              readOnly: true
+
+      volumes:
+        - name: grafana-data
+          persistentVolumeClaim:
+            claimName: grafana-data
+
+        - name: grafana-datasource
+          configMap:
+            name: grafana-datasource
+
+        - name: grafana-dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+
+        - name: grafana-dashboard
+          configMap:
+            name: requestflow-grafana-dashboard
