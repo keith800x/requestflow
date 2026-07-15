@@ -63,8 +63,8 @@ spec:
 
       containers:
         - name: backend
-          image: requestflow-backend:dev
-          imagePullPolicy: Never
+          image: ghcr.io/keith800x/requestflow-backend:devops
+          imagePullPolicy: Always
 
           command:
             - uvicorn
