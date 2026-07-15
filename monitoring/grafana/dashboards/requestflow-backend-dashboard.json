@@ -518,7 +518,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (status) (\r\n  increase(http_requests_total{job=\"requestflow-backend\"}[$__range])\r\n)",
+          "expr": "round(\r\n  sum by (status) (\r\n    increase(http_requests_total{job=\"requestflow-backend\"}[$__range])\r\n  )\r\n)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"

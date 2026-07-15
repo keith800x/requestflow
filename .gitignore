@@ -71,3 +71,6 @@ logs/
 # =========================
 *.tmp
 *.temp
+
+# Local Kubernetes secrets
+k8s/secret.local.yml
