@@ -1,0 +1,70 @@
+name: Publish Docker Images
+
+on:
+  push:
+    branches:
+      - devops-extension
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/keith800x/requestflow-backend
+  FRONTEND_IMAGE: ghcr.io/keith800x/requestflow-frontend
+
+jobs:
+  publish-images:
+    name: Build and publish container images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:devops
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.description=RequestFlow FastAPI backend
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha,scope=requestflow-backend
+          cache-to: type=gha,mode=max,scope=requestflow-backend
+
+      - name: Build and publish frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          push: true
+          platforms: linux/amd64
+          build-args: |
+            VITE_API_BASE_URL=/api
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:devops
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.description=RequestFlow React and Nginx frontend
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha,scope=requestflow-frontend
+          cache-to: type=gha,mode=max,scope=requestflow-frontend
