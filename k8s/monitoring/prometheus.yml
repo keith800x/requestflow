@@ -1,0 +1,108 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: requestflow
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: requestflow-prometheus
+  namespace: requestflow
+spec:
+  type: ClusterIP
+  selector:
+    app: requestflow-prometheus
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: requestflow-prometheus
+  namespace: requestflow
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: requestflow-prometheus
+
+  template:
+    metadata:
+      labels:
+        app: requestflow-prometheus
+
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--storage.tsdb.retention.time=7d"
+
+          ports:
+            - name: http
+              containerPort: 9090
+
+          volumeMounts:
+            - name: prometheus-config
+              mountPath: /etc/prometheus
+              readOnly: true
+
+            - name: prometheus-data
+              mountPath: /prometheus
+
+          startupProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+
+        - name: prometheus-data
+          persistentVolumeClaim:
+            claimName: prometheus-data
