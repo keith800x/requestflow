@@ -16,6 +16,22 @@ services:
       timeout: 5s
       retries: 10
 
+  # migrate:
+  #   build: ./backend
+  #   command:
+  #     - alembic
+  #     - upgrade
+  #     - head
+  #   environment:
+  #     DATABASE_URL: postgresql+psycopg://requestflow_user:requestflow_password@postgres:5432/requestflow_db
+  #     JWT_SECRET_KEY: dev-secret-key-change-this-later
+  #     ENVIRONMENT: development
+  #   volumes:
+  #     - ./backend:/app
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+
   backend:
     build: ./backend
     container_name: requestflow-backend
