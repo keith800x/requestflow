@@ -114,19 +114,81 @@ Create safe Git branch
 
 ### DevOps architecture
 
-```text
-Browser
-   │
-   ▼
-Traefik Ingress
-   ├── /      → React frontend served by Nginx
-   └── /api/* → FastAPI backend
-                         │
-                         ▼
-                   PostgreSQL StatefulSet
+```mermaid
+flowchart LR
+    User[Browser]
 
-Prometheus → FastAPI /metrics
-Grafana    → Prometheus
+    subgraph Cluster["Docker Desktop Kubernetes"]
+        Traefik[Traefik Ingress]
+
+        Frontend["React Frontend<br/>Nginx"]
+        Backend["FastAPI Backend"]
+        Database[("PostgreSQL<br/>StatefulSet + PVC")]
+
+        Prometheus["Prometheus<br/>Deployment + PVC"]
+        Grafana["Grafana<br/>Deployment + PVC"]
+
+        ConfigMap["ConfigMap"]
+        Secret["Kubernetes Secret"]
+    end
+
+    User -->|"requestflow.localhost/"| Traefik
+    Traefik -->|"/"| Frontend
+    Traefik -->|"/api/*"| Backend
+
+    Backend -->|"SQL / TCP 5432"| Database
+    Prometheus -->|"Scrape /metrics"| Backend
+    Grafana -->|"PromQL queries"| Prometheus
+
+    ConfigMap -.-> Backend
+    Secret -.-> Backend
+    Secret -.-> Database
+    Secret -.-> Grafana
+```
+
+### CI and Container Publishing Flow
+
+```mermaid
+flowchart LR
+    Developer["Developer Push"]
+    GitHub["GitHub Repository"]
+    CI["GitHub Actions"]
+
+    Tests["Backend Tests<br/>Frontend Tests<br/>Build Checks"]
+    BackendImage["Backend Container Image"]
+    FrontendImage["Frontend Container Image"]
+    GHCR["GitHub Container Registry"]
+    Kubernetes["Docker Desktop Kubernetes"]
+
+    Developer --> GitHub
+    GitHub --> CI
+    CI --> Tests
+    Tests --> BackendImage
+    Tests --> FrontendImage
+    BackendImage --> GHCR
+    FrontendImage --> GHCR
+    GHCR --> Kubernetes
+```
+
+### Request Routing
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Traefik
+    participant Frontend as React/Nginx
+    participant Backend as FastAPI
+    participant Database as PostgreSQL
+
+    Browser->>Traefik: GET /
+    Traefik->>Frontend: Forward /
+    Frontend-->>Browser: React application
+
+    Browser->>Traefik: POST /api/auth/login
+    Traefik->>Backend: POST /auth/login
+    Backend->>Database: Query user
+    Database-->>Backend: User record
+    Backend-->>Browser: JWT access token
 ```
 
 ### Runtime endpoints
@@ -149,9 +211,104 @@ Grafana    → Prometheus
 - Grafana automatically provisions the Prometheus datasource and RequestFlow dashboard.
 - Traefik routes `requestflow.localhost/` to the frontend and `/api/` to the backend.
 - Kubernetes workloads pull versioned images from **GitHub Container Registry**.
+- The complete namespace was deleted and successfully recreated using the version-controlled manifests and deployment script.
+- Deployment verification checks the frontend, backend health endpoint, and backend readiness endpoint through Traefik Ingress.
 
 ---
 
+## DevOps Evidence
+
+The following screenshots document the clean-state Kubernetes recreation test, automated verification, monitoring setup, and container publishing pipeline.
+
+### Kubernetes State Before Recreation
+
+Before the clean-state test, the existing `requestflow` namespace contained healthy application and monitoring workloads, Services, persistent volume claims, and Traefik Ingress resources.
+
+The resources had been running for several days before the namespace was deleted.
+
+![Kubernetes state before recreation](assets/devops/kubernetes-before-recreation.png)
+
+### Clean Kubernetes Deployment
+
+The `requestflow` namespace was deleted and recreated using the version-controlled Kubernetes manifests and automated deployment script.
+
+The recreated environment contains:
+
+- Running frontend, backend, PostgreSQL, Prometheus, and Grafana Pods
+- Kubernetes Services for all application and monitoring components
+- Bound persistent volume claims for PostgreSQL, Prometheus, and Grafana
+- Traefik Ingress routing for `requestflow.localhost`
+
+The recently created resource ages shown below confirm that the environment was recreated from a clean namespace.
+
+![Kubernetes clean deployment](assets/devops/kubernetes-clean-deployment.png)
+
+### Automated Kubernetes Verification
+
+The verification script inspects the Kubernetes resources and tests the application through Traefik Ingress.
+
+It confirms that:
+
+- The frontend returns HTTP `200`
+- The backend health endpoint reports healthy
+- The backend readiness endpoint confirms PostgreSQL connectivity
+- The complete verification process passes
+
+![Kubernetes verification](assets/devops/kubernetes-verification.png)
+
+### Prometheus Target Health
+
+Prometheus automatically discovers and scrapes the FastAPI `/metrics` endpoint through the Kubernetes backend Service.
+
+Both the Prometheus server and the `requestflow-backend` target report an `UP` state.
+
+![Prometheus targets](assets/devops/prometheus-targets.png)
+
+### Provisioned Grafana Datasource
+
+The Prometheus datasource is provisioned automatically through version-controlled Grafana configuration.
+
+The datasource uses the internal Kubernetes Service URL:
+
+```text
+http://requestflow-prometheus:9090
+```
+Because the datasource is provisioned through configuration, it cannot be manually modified through the Grafana interface.
+
+Grafana Monitoring Dashboard
+
+The RequestFlow Grafana dashboard is provisioned automatically and displays live backend metrics, including:
+
+- Backend health
+- API request rate
+- API error rate
+- 95th-percentile response time
+- Requests grouped by endpoint
+- Requests grouped by status code
+- Backend CPU usage
+- Backend memory usage
+
+![Grafana monitoring dashboard](assets/devops/grafana-dashboard.png)
+
+### GitHub Actions Container Publishing
+
+GGitHub Actions builds and publishes the frontend and backend container images when changes are pushed to the `devops-extension` branch.
+
+The workflow performs:
+
+- Frontend container build and publication
+- Backend container build and publication
+- Branch-tagged image publishing
+- Commit-specific image tagging for traceability
+
+[View the container publishing workflow runs](https://github.com/keith800x/requestflow/actions/workflows/docker-publish.yml)
+
+![Successful GitHub Actions container publishing](assets/devops/github-actions-publish.png)
+
+Published container versions:
+
+- [Backend container versions](https://github.com/keith800x/requestflow/pkgs/container/requestflow-backend/versions)
+- [Frontend container versions](https://github.com/keith800x/requestflow/pkgs/container/requestflow-frontend/versions)
 
 ## Tech Stack
 
@@ -211,6 +368,11 @@ Successful behaviours tested:
 - Published frontend and backend images to GitHub Container Registry.
 - Routed frontend and API traffic through Traefik Ingress.
 - Verified the complete Kubernetes route with automated deployment and health-check scripts.
+- Recreated the complete application from a deleted Kubernetes namespace using the automated deployment script.
+- Verified that all Pods, Services, PVCs, monitoring resources, and Ingress routes were recreated successfully.
+- Verified the frontend, backend health endpoint, and backend readiness endpoint using an automated verification script.
+- Confirmed automatic Prometheus target discovery and Grafana datasource/dashboard provisioning.
+- Confirmed PostgreSQL data persistence after deleting and recreating its Pod.
 
 Example service request:
 
@@ -957,6 +1119,15 @@ requestflow/
 │       └── docker-publish.yml              # GHCR image publishing
 ├── assets/
 │   └── AppUIScreenshot.png                 # Screenshot for README
+│   └── devops/
+│       ├── kubernetes-before-recreation.png
+│       ├── kubernetes-clean-deployment.png
+│       ├── kubernetes-verification.png
+│       ├── prometheus-targets.png
+│       ├── grafana-dashboard.png
+│       ├── grafana-datasource.png
+│       ├── github-actions-ghcr.png
+│       └── ghcr-packages.png
 │
 ├── docker-compose.yml                      # Local frontend, backend, and PostgreSQL setup
 ├── docker-compose.prod-local.yml           # Production-style local Nginx stack
@@ -972,6 +1143,7 @@ requestflow/
 ## Limitations & Future Work
 
 ### Limitations
+
 - The public demonstration uses Vercel and Render rather than the local Kubernetes environment.
 - The Kubernetes environment currently runs on Docker Desktop and is intended for portfolio and learning use.
 - The project is currently designed for local development and portfolio demonstration.
@@ -1001,9 +1173,9 @@ requestflow/
 - Add TLS/HTTPS termination for Traefik.
 - Add Prometheus alert rules and Alertmanager.
 - Add container vulnerability scanning and dependency scanning to CI.
-- Add automated clean-state deployment testing.
 - Create a separate networking or cloud branch for cloud VM or managed Kubernetes deployment.
 - Optionally package the Kubernetes resources with Kustomize or Helm.
+- Run clean-state Kubernetes deployment verification automatically in CI using an ephemeral test cluster.
 
 ---
 
