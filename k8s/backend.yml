@@ -61,6 +61,22 @@ spec:
                 sleep 2
               done
 
+        - name: run-migrations
+          image: ghcr.io/keith800x/requestflow-backend:devops
+          imagePullPolicy: Always
+
+          command:
+            - alembic
+            - upgrade
+            - head
+
+          envFrom:
+            - configMapRef:
+                name: requestflow-config
+
+            - secretRef:
+                name: requestflow-secret
+
       containers:
         - name: backend
           image: ghcr.io/keith800x/requestflow-backend:devops

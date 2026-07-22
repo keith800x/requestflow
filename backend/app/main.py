@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.database import Base, engine, get_db
+from app.database import get_db
 from app.models import comment, request, user
 from app.routers import auth_router, comment_router, request_router
 
@@ -30,10 +30,6 @@ if ENVIRONMENT == "production" and not JWT_SECRET_KEY:
 if not JWT_SECRET_KEY:
     JWT_SECRET_KEY = "dev-secret-key-change-this-later"
 
-if os.getenv("ENVIRONMENT") != "test":
-    # Create database tables.
-    # Later, we can replace this with Alembic migrations.
-    Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(
