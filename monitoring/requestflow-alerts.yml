@@ -1,0 +1,14 @@
+groups:
+  - name: requestflow-availability
+    rules:
+      - alert: RequestFlowBackendDown
+        expr: up{job="requestflow-backend"} == 0
+        for: 1m
+
+        labels:
+          severity: critical
+          service: requestflow-backend
+
+        annotations:
+          summary: "RequestFlow backend is unavailable"
+          description: "Prometheus has been unable to scrape {{ $labels.instance }} for more than one minute."

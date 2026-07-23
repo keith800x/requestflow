@@ -75,6 +75,7 @@ services:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/requestflow-alerts.yml:/etc/prometheus/requestflow-alerts.yml:ro
     depends_on:
       backend:
         condition: service_healthy
