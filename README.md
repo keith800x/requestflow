@@ -10,10 +10,12 @@
 ![Registry](https://img.shields.io/badge/Registry-GHCR-black)
 ![Ingress](https://img.shields.io/badge/Ingress-Traefik-24A1C1)
 ![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Render-purple)
+![Migrations](https://img.shields.io/badge/Migrations-Alembic-6BA81E)
+![Security](https://img.shields.io/badge/Security-Trivy-1904DA)
 ![CI](https://github.com/keith800x/requestflow/actions/workflows/ci.yml/badge.svg?branch=master)
 ![Status](https://img.shields.io/badge/Status-MVP%20%2B%20DevOps%20Extension-brightgreen)
 
-A full-stack IT service request tracker that allows users to submit and track IT support requests, while admins can manage all requests, update statuses, delete requests, and add internal notes. The project also includes a DevOps extension covering containerisation, CI, GHCR image publishing, Kubernetes orchestration, Ingress routing, persistent storage, health probes, Prometheus monitoring, Grafana dashboard provisioning, and repeatable deployment scripts.
+A full-stack IT service request tracker that allows users to submit and track IT support requests, while admins can manage all requests, update statuses, delete requests, and add internal notes. The project also includes a DevOps extension covering containerisation, CI, GHCR image publishing, Kubernetes orchestration, Ingress routing, persistent storage, Alembic database migrations, health probes, Prometheus monitoring and alert rules, Grafana dashboard provisioning, Trivy container scanning, and repeatable deployment scripts. The public deployment uses Vercel for the frontend, Render for the API, and Neon PostgreSQL for the production database.
 
 ![Screenshot](assets/AppUIScreenshot.png)
 
@@ -88,6 +90,11 @@ To improve reliability and maintainability, the project includes:
 - **Kubernetes manifests** for the frontend, backend, PostgreSQL, Prometheus, Grafana, configuration, secrets, storage, and routing.
 - **Traefik Ingress** for routing the frontend and `/api` traffic through one local hostname.
 - **PowerShell deployment and verification scripts** for repeatable local Kubernetes deployment.
+- **Alembic migrations** for versioned PostgreSQL schema changes instead of runtime table creation.
+- **Migration gates** in Docker Compose, Render startup, and Kubernetes init containers.
+- **Trivy container scanning** that fails CI on fixable HIGH or CRITICAL vulnerabilities.
+- **Prometheus alert rules** that detect when the backend cannot be scraped for more than one minute.
+- **Neon PostgreSQL** as the managed production database used by the Render backend.
 
 ---
 
@@ -108,7 +115,11 @@ Create safe Git branch
 → publish frontend and backend images to GHCR
 → deploy Prometheus and Grafana in Kubernetes
 → provision the Grafana datasource and dashboard automatically
+→ add Alembic migration execution to Compose, Render, and Kubernetes startup
 → add Traefik Ingress routing
+→ add Trivy container vulnerability scanning in GitHub Actions
+→ add the RequestFlowBackendDown Prometheus alert rule
+→ migrate the production database from Render PostgreSQL to Neon PostgreSQL
 → add repeatable deployment and verification scripts
 ```
 
@@ -157,6 +168,7 @@ flowchart LR
     Tests["Backend Tests<br/>Frontend Tests<br/>Build Checks"]
     BackendImage["Backend Container Image"]
     FrontendImage["Frontend Container Image"]
+    Trivy["Trivy HIGH/CRITICAL Scan"]
     GHCR["GitHub Container Registry"]
     Kubernetes["Docker Desktop Kubernetes"]
 
@@ -209,6 +221,8 @@ sequenceDiagram
 - Application configuration is stored in a **ConfigMap**.
 - Local passwords and connection strings are stored in an ignored **Secret manifest**.
 - Grafana automatically provisions the Prometheus datasource and RequestFlow dashboard.
+- Prometheus loads the `RequestFlowBackendDown` alert rule from a ConfigMap.
+- Prometheus uses the Kubernetes `Recreate` deployment strategy so only one process writes to its persistent TSDB volume during upgrades.
 - Traefik routes `requestflow.localhost/` to the frontend and `/api/` to the backend.
 - Kubernetes workloads pull versioned images from **GitHub Container Registry**.
 - The complete namespace was deleted and successfully recreated using the version-controlled manifests and deployment script.
@@ -219,6 +233,18 @@ sequenceDiagram
 ## DevOps Evidence
 
 The following screenshots document the clean-state Kubernetes recreation test, automated verification, monitoring setup, and container publishing pipeline.
+
+### Versioned Database Migrations
+
+Database schema changes are managed with Alembic rather than creating tables automatically when the API starts.
+
+The migration chain currently includes the initial schema and a follow-up migration that converts service-request timestamps to timezone-aware PostgreSQL columns. Migration execution is integrated into:
+
+- Docker Compose through a one-off migration service
+- Kubernetes through the backend `run-migrations` init container
+- Render through `alembic upgrade head` before Uvicorn starts
+
+This keeps local, Kubernetes, and public production environments aligned to the same schema revision.
 
 ### Kubernetes State Before Recreation
 
@@ -264,6 +290,20 @@ Both the Prometheus server and the `requestflow-backend` target report an `UP` s
 
 ![Prometheus targets](assets/devops/prometheus-targets.png)
 
+### Prometheus Backend Availability Alert
+
+Prometheus evaluates the `RequestFlowBackendDown` alert rule every 15 seconds.
+
+The rule fires when:
+
+```promql
+up{job="requestflow-backend"} == 0
+```
+
+and the backend remains unavailable for more than one minute. The alert was tested by scaling the Kubernetes backend Deployment to zero and confirming that the rule changed to `FIRING` with `severity="critical"`.
+
+![Prometheus backend availability alert](assets/devops/prometheus-backend-down-alert.png)
+
 ### Provisioned Grafana Datasource
 
 The Prometheus datasource is provisioned automatically through version-controlled Grafana configuration.
@@ -275,7 +315,9 @@ http://requestflow-prometheus:9090
 ```
 Because the datasource is provisioned through configuration, it cannot be manually modified through the Grafana interface.
 
-Grafana Monitoring Dashboard
+![Provisioned Grafana datasource](assets/devops/grafana-datasource.png)
+
+### Grafana Monitoring Dashboard
 
 The RequestFlow Grafana dashboard is provisioned automatically and displays live backend metrics, including:
 
@@ -292,7 +334,7 @@ The RequestFlow Grafana dashboard is provisioned automatically and displays live
 
 ### GitHub Actions Container Publishing
 
-GGitHub Actions builds and publishes the frontend and backend container images when changes are pushed to the `devops-extension` branch.
+GitHub Actions builds and publishes the frontend and backend container images when changes are pushed to the `devops-extension` branch.
 
 The workflow performs:
 
@@ -310,6 +352,20 @@ Published container versions:
 - [Backend container versions](https://github.com/keith800x/requestflow/pkgs/container/requestflow-backend/versions)
 - [Frontend container versions](https://github.com/keith800x/requestflow/pkgs/container/requestflow-frontend/versions)
 
+### Trivy Container Security Scanning
+
+The `security.yml` workflow builds the frontend and backend images and scans both images with Trivy.
+
+The security gate checks operating-system and application-library vulnerabilities, ignores vulnerabilities that do not yet have a fix, and fails the workflow when a fixable `HIGH` or `CRITICAL` vulnerability is found.
+
+![Successful Trivy container security scan](assets/devops/github-actions-trivy.png)
+
+### Published GHCR Packages
+
+The versioned frontend and backend images are published to GitHub Container Registry and can be pulled by the Kubernetes manifests.
+
+![Published RequestFlow GHCR packages](assets/devops/ghcr-packages.png)
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -320,8 +376,9 @@ Published container versions:
 | Frontend Web Server | Nginx |
 | Backend | FastAPI |
 | Database ORM | SQLAlchemy |
+| Database Migrations | Alembic |
 | Data Validation | Pydantic |
-| Database | PostgreSQL |
+| Database | PostgreSQL; Neon PostgreSQL in production |
 | Authentication | JWT |
 | Password Hashing | pwdlib / Argon2 |
 | Testing | Pytest, Vitest, React Testing Library |
@@ -330,7 +387,9 @@ Published container versions:
 | Orchestration | Kubernetes |
 | Kubernetes Routing | Traefik Ingress |
 | Monitoring | Prometheus, Grafana |
-| CI/CD | GitHub Actions, Vercel, Render |
+| Alerting | Prometheus alert rules |
+| Container Security | Trivy |
+| CI/CD | GitHub Actions, Vercel, Render, Neon |
 | Version Control | Git and GitHub |
 
 ---
@@ -373,6 +432,13 @@ Successful behaviours tested:
 - Verified the frontend, backend health endpoint, and backend readiness endpoint using an automated verification script.
 - Confirmed automatic Prometheus target discovery and Grafana datasource/dashboard provisioning.
 - Confirmed PostgreSQL data persistence after deleting and recreating its Pod.
+- Replaced runtime SQLAlchemy table creation with versioned Alembic migrations.
+- Verified the Alembic revision chain, upgraded PostgreSQL to the latest revision, and confirmed no pending schema operations.
+- Ran migrations automatically before the backend starts in Docker Compose, Kubernetes, and Render.
+- Migrated the public production database from expiring Render PostgreSQL to Neon PostgreSQL.
+- Added Trivy container scans for both frontend and backend images with a HIGH/CRITICAL security gate.
+- Added and tested the `RequestFlowBackendDown` Prometheus alert by simulating a Kubernetes backend outage.
+- Updated the Prometheus Deployment strategy to `Recreate` to protect the single-writer TSDB persistent volume during upgrades.
 
 Example service request:
 
@@ -447,7 +513,7 @@ DEPLOYED_BACKEND_URL=https://your-render-backend-url.onrender.com
 
 For the Docker Compose local setup, the required backend and frontend environment variables are already provided inside `docker-compose.yml`.
 
-For deployed environments, production values are configured in the Render and Vercel dashboards instead of local `.env` files.
+For deployed environments, frontend values are configured in Vercel, while the Render backend receives its Neon `DATABASE_URL`, JWT secret, allowed origins, and production environment settings through Render environment variables.
 
 Do not commit real `.env` files to GitHub.
 ---
@@ -561,7 +627,7 @@ In this mode:
 ```text
 Local Docker frontend
 → deployed Render backend
-→ deployed Render PostgreSQL database
+→ Neon PostgreSQL database
 ```
 
 Stop this environment with:
@@ -843,6 +909,48 @@ The internal note is visible to admins but hidden from normal users.
 
 ---
 
+## Database Migrations
+
+Alembic is the source of truth for database schema changes.
+
+From the backend virtual environment:
+
+```cmd
+cd backend
+.venv\Scripts\activate.bat
+alembic current
+alembic upgrade head
+alembic check
+```
+
+Expected behaviour:
+
+```text
+alembic current      → shows the active database revision
+alembic upgrade head → applies all pending migrations
+alembic check        → confirms that model changes do not require a new migration
+```
+
+In normal startup flows, migrations run automatically before the API starts:
+
+```text
+Docker Compose → migrate service → backend
+Kubernetes     → run-migrations init container → backend container
+Render         → alembic upgrade head → Uvicorn
+```
+
+Create a new migration only after intentionally changing SQLAlchemy models:
+
+```cmd
+alembic revision --autogenerate -m "describe schema change"
+alembic upgrade head
+alembic check
+```
+
+Review every autogenerated migration before committing it.
+
+---
+
 ## Running Tests
 
 The project includes backend and frontend tests.
@@ -956,6 +1064,26 @@ Workflow file:
 
 ---
 
+### Container security workflow
+
+The Trivy workflow builds and scans both application images.
+
+It checks:
+
+- Operating-system packages
+- Python, npm, and other detected application libraries
+- Fixable `HIGH` and `CRITICAL` vulnerabilities
+
+Workflow file:
+
+```text
+.github/workflows/security.yml
+```
+
+A fixable HIGH or CRITICAL vulnerability causes the workflow to fail, preventing a green security check until the vulnerable base image or dependency is updated.
+
+---
+
 ### GHCR publishing workflow
 
 The DevOps workflow builds and publishes both application images to GitHub Container Registry:
@@ -993,8 +1121,8 @@ The application is deployed using:
 |---|---|
 | Frontend | Vercel |
 | Backend API | Render Web Service |
-| Database | Render PostgreSQL |
-| CI | GitHub Actions |
+| Database | Neon PostgreSQL |
+| CI and Security | GitHub Actions and Trivy |
 
 Public Deployment flow:
 
@@ -1003,6 +1131,7 @@ Push to GitHub master branch
 → GitHub Actions runs backend tests, run frontend component tests, frontend build, and Docker build checks
 → Vercel redeploys the frontend
 → Render redeploys the backend
+→ Render runs Alembic migrations and connects to Neon PostgreSQL
 ```
 
 The DevOps extension provides a second deployment model for local infrastructure testing:
@@ -1046,44 +1175,48 @@ The local Kubernetes deployment is a portfolio and learning environment. It does
 requestflow/
 ├── backend/
 │   ├── app/
-│   │   ├── models/                         # SQLAlchemy database models
-│   │   ├── routers/                        # FastAPI route handlers
-│   │   ├── schemas/                        # Pydantic request/response schemas
-│   │   ├── services/                       # Security and helper services
-│   │   ├── tests/                          # Pytest backend tests
-│   │   ├── auth_dependencies.py            # Authentication and admin dependencies
-│   │   ├── database.py                     # Database engine and session setup
-│   │   ├── enums.py                        # Shared enum values
-│   │   └── main.py                         # FastAPI application entry point
-│   ├── Dockerfile                          # Backend Docker image
-│   ├── requirements.txt                    # Backend dependencies
-│   └── .env.example                        # Example backend environment variables
+│   │   ├── models/                                     # SQLAlchemy database models
+│   │   ├── routers/                                    # FastAPI route handlers
+│   │   ├── schemas/                                    # Pydantic request/response schemas
+│   │   ├── services/                                   # Security and helper services
+│   │   ├── tests/                                      # Pytest backend tests
+│   │   ├── auth_dependencies.py                        # Authentication and admin dependencies
+│   │   ├── database.py                                 # Database engine and session setup
+│   │   ├── enums.py                                    # Shared enum values
+│   │   └── main.py                                     # FastAPI application entry point
+│   ├── alembic/                                        # Versioned database migration scripts
+│   ├── alembic.ini                                     # Alembic configuration
+│   ├── Dockerfile                                      # Backend Docker image
+│   ├── requirements.txt                                # Backend dependencies
+│   └── .env.example                                    # Example backend environment variables
 │
 ├── frontend/
-│   ├── public/                             # Static public assets
+│   ├── public/                                         # Static public assets
 │   ├── src/
-│   │   ├── api/                            # Axios API clients
-│   │   ├── assets/                          Frontend assets imported by React
-│   │   ├── components/                     # Shared layout and route guards
-│   │   ├── pages/                          # React page components and page tests
-│   │   ├── test/                           # Vitest and React Testing Library setup
-│   │   ├── utils/                          # Date, error, search, filter, and sorting helpers
-│   │   ├── App.tsx                         # Frontend route configuration
-│   │   ├── App.css                         # App-level component styling
-│   │   ├── main.tsx                        # React entry point
-│   │   └── index.css                       # Global styling
-│   ├── index.html                          # Vite HTML entry point
-│   ├── package.json                        # Frontend scripts and dependencies
-│   ├── package-lock.json                   # Locked npm dependencies
-│   ├── vite.config.ts                      # Vite and Vitest configuration
-│   ├── eslint.config.js                    # ESLint configuration
-│   ├── tsconfig.json                       # Main TypeScript configuration
-│   ├── tsconfig.app.json                   # TypeScript config for frontend app code
-│   ├── tsconfig.node.json                  # TypeScript config for Node/Vite config files
-│   └── .env.example                        # Example frontend environment variables
+│   │   ├── api/                                        # Axios API clients
+│   │   ├── assets/                                     # Frontend assets imported by React
+│   │   ├── components/                                 # Shared layout and route guards
+│   │   ├── pages/                                      # React page components and page tests
+│   │   ├── test/                                       # Vitest and React Testing Library setup
+│   │   ├── utils/                                      # Date, error, search, filter, and sorting helpers
+│   │   ├── App.tsx                                     # Frontend route configuration
+│   │   ├── App.css                                     # App-level component styling
+│   │   ├── main.tsx                                    # React entry point
+│   │   └── index.css                                   # Global styling
+│   ├── index.html                                      # Vite HTML entry point
+│   ├── package.json                                    # Frontend scripts and dependencies
+│   ├── package-lock.json                               # Locked npm dependencies
+│   ├── vite.config.ts                                  # Vite and Vitest configuration
+│   ├── eslint.config.js                                # ESLint configuration
+│   ├── tsconfig.json                                   # Main TypeScript configuration
+│   ├── tsconfig.app.json                               # TypeScript config for frontend app code
+│   ├── tsconfig.node.json                              # TypeScript config for Node/Vite config files
+│   ├── .env.example                                    # Example frontend environment variables
+│   └── vercel.json                                     # SPA route fallback for Vercel
+│ 
 │
 ├── monitoring/
-│   ├── prometheus.yml                      # Docker Compose scrape configuration
+│   ├── prometheus.yml                                  # Docker Compose scrape configuration
 │   └── grafana/
 │       ├── dashboards/
 │       │   └── requestflow-backend-dashboard.json
@@ -1117,6 +1250,7 @@ requestflow/
 │   └── workflows/
 │       ├── ci.yml                          # Test and build validation
 │       └── docker-publish.yml              # GHCR image publishing
+│       └── security.yml                    # Trivy container vulnerability scanning
 ├── assets/
 │   └── AppUIScreenshot.png                 # Screenshot for README
 │   └── devops/
@@ -1126,7 +1260,9 @@ requestflow/
 │       ├── prometheus-targets.png
 │       ├── grafana-dashboard.png
 │       ├── grafana-datasource.png
-│       ├── github-actions-ghcr.png
+│       ├── github-actions-publish.png
+│       ├── github-actions-trivy.png
+│       ├── prometheus-backend-down-alert.png
 │       └── ghcr-packages.png
 │
 ├── docker-compose.yml                      # Local frontend, backend, and PostgreSQL setup
