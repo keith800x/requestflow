@@ -8,3 +8,5 @@ httpx
 PyJWT
 pwdlib[argon2]
 email-validator
+prometheus-fastapi-instrumentator
+alembic

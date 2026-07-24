@@ -1,16 +1,22 @@
 import os
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.database import Base, engine
+from app.database import get_db
 from app.models import comment, request, user
 from app.routers import auth_router, comment_router, request_router
 
 from fastapi.middleware.cors import CORSMiddleware
+
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from prometheus_fastapi_instrumentator import Instrumentator
+
 # Create database tables.
 # Later, we can replace this with Alembic migrations.
 
@@ -24,16 +30,12 @@ if ENVIRONMENT == "production" and not JWT_SECRET_KEY:
 if not JWT_SECRET_KEY:
     JWT_SECRET_KEY = "dev-secret-key-change-this-later"
 
-if os.getenv("ENVIRONMENT") != "test":
-    # Create database tables.
-    # Later, we can replace this with Alembic migrations.
-    Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(
     title="RequestFlow API",
-    description="A mini IT service request tracker backend built with FastAPI.",
-    version="0.2.0"
+    description="Backend API for the RequestFlow IT service request tracker.",
+    version="1.0.0",
 )
 
 allowed_origins = os.getenv(
@@ -49,6 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+Instrumentator().instrument(app).expose(app)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
@@ -100,13 +103,24 @@ def root():
         "message": "RequestFlow API is running."
     }
 
+@app.get("/ready")
+def readiness_check(db: Session = Depends(get_db)):
+    """
+    Readiness check.
+
+    Used by Docker/Kubernetes to check if the API can connect to the database.
+    """
+    db.execute(text("SELECT 1"))
+    return {"status": "ready"}
+
 
 @app.get("/health")
 def health_check():
     """
-    Health check endpoint.
+    Health/Liveness check check endpoint.
 
     Useful for Docker, deployment, and monitoring tools.
+    E.g. It is used by Docker/Kubernetes to check if the API process is running.
     """
 
     return {

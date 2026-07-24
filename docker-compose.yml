@@ -16,6 +16,22 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    build: ./backend
+    command:
+      - alembic
+      - upgrade
+      - head
+    environment:
+      DATABASE_URL: postgresql+psycopg://requestflow_user:requestflow_password@postgres:5432/requestflow_db
+      JWT_SECRET_KEY: dev-secret-key-change-this-later
+      ENVIRONMENT: development
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   backend:
     build: ./backend
     container_name: requestflow-backend
@@ -29,8 +45,13 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully 
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   frontend:
     image: node:24-slim
@@ -47,7 +68,35 @@ services:
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - backend
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: requestflow-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/requestflow-alerts.yml:/etc/prometheus/requestflow-alerts.yml:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+  grafana:
+    image: grafana/grafana:latest
+    container_name: requestflow-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - requestflow_grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
 
 volumes:
   requestflow_postgres_data:
   requestflow_frontend_node_modules:
+  requestflow_grafana_data:

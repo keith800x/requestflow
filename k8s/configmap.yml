@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: requestflow-config
+  namespace: requestflow
+data:
+  ENVIRONMENT: "development"
+  ALLOWED_ORIGINS: "http://localhost:8080"
+
+  POSTGRES_DB: "requestflow_db"
+  POSTGRES_USER: "requestflow_user"
