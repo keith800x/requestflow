@@ -9,7 +9,7 @@
 ![Monitoring](https://img.shields.io/badge/Monitoring-Prometheus%20%2B%20Grafana-orange)
 ![Registry](https://img.shields.io/badge/Registry-GHCR-black)
 ![Ingress](https://img.shields.io/badge/Ingress-Traefik-24A1C1)
-![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Render-purple)
+![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Render%20%2B%20Neon-purple)
 ![Migrations](https://img.shields.io/badge/Migrations-Alembic-6BA81E)
 ![Security](https://img.shields.io/badge/Security-Trivy-1904DA)
 ![CI](https://github.com/keith800x/requestflow/actions/workflows/ci.yml/badge.svg?branch=master)
@@ -17,7 +17,7 @@
 
 A full-stack IT service request tracker that allows users to submit and track IT support requests, while admins can manage all requests, update statuses, delete requests, and add internal notes. The project also includes a DevOps extension covering containerisation, CI, GHCR image publishing, Kubernetes orchestration, Ingress routing, persistent storage, Alembic database migrations, health probes, Prometheus monitoring and alert rules, Grafana dashboard provisioning, Trivy container scanning, and repeatable deployment scripts. The public deployment uses Vercel for the frontend, Render for the API, and Neon PostgreSQL for the production database.
 
-![Screenshot](assets/AppUIScreenshot.png)
+![RequestFlow login page](assets/app/login-page.png)
 
 ## Live Demo
 
@@ -52,8 +52,6 @@ The backend is a FastAPI application that handles authentication, authorization,
 The application uses JWT-based authentication. After logging in, the frontend stores the access token and includes it in future API requests. The backend validates the token and checks the user's role before returning protected data.
 
 The authentication and authorization flow is:
-
-The application flow is:
 
 ```text
 User logs in
@@ -217,7 +215,7 @@ sequenceDiagram
 - Frontend, backend, Prometheus, and Grafana run as **Deployments**.
 - PostgreSQL, Prometheus, and Grafana use **PersistentVolumeClaims**.
 - Kubernetes **startup, readiness, and liveness probes** monitor the workloads.
-- A backend **init container** waits for PostgreSQL before FastAPI starts.
+- Backend **init containers** wait for PostgreSQL and run `alembic upgrade head` before FastAPI starts.
 - Application configuration is stored in a **ConfigMap**.
 - Local passwords and connection strings are stored in an ignored **Secret manifest**.
 - Grafana automatically provisions the Prometheus datasource and RequestFlow dashboard.
@@ -229,6 +227,20 @@ sequenceDiagram
 - Deployment verification checks the frontend, backend health endpoint, and backend readiness endpoint through Traefik Ingress.
 
 ---
+
+## Application Features
+
+### User Request Management
+
+![RequestFlow user request list](assets/app/user-requests.png)
+
+### Admin Request Detail and Internal Notes
+
+![Admin request detail](assets/app/admin-request-detail.png)
+
+### Deployed Backend API
+
+![RequestFlow FastAPI documentation](assets/app/api-documentation.png)
 
 ## DevOps Evidence
 
@@ -525,7 +537,7 @@ RequestFlow supports several alternative local environments. Run **one local env
 | Environment | Purpose | Main URL |
 |---|---|---|
 | Full local development stack | Develop the frontend and backend locally with monitoring | `http://localhost:5173` |
-| Local frontend with deployed backend | Test the local frontend against the Render backend and database | `http://localhost:5173` |
+| Local frontend with deployed backend | Test the local frontend against the Render backend and Neon database | `http://localhost:5173` |
 | Production-like local stack | Test the built React application served through Nginx | `http://localhost:8080` |
 | Kubernetes | Test orchestration, persistence, monitoring, and Ingress | `http://requestflow.localhost` |
 
@@ -589,7 +601,7 @@ http://localhost:5173
 
 ### Run Local Frontend Against Deployed Backend
 
-This mode runs only the frontend locally while connecting it to the deployed Render backend and Render PostgreSQL database.
+This mode runs only the frontend locally while connecting it to the deployed Render backend and Neon PostgreSQL database.
 Stop the full local development stack before using this mode because both environments use frontend port `5173`.
 
 Stop the development stack:
@@ -1216,7 +1228,8 @@ requestflow/
 │ 
 │
 ├── monitoring/
-│   ├── prometheus.yml                                  # Docker Compose scrape configuration
+│   ├── prometheus.yml                                  #  Prometheus scrape and rule configuration
+│   ├── requestflow-alerts.yml                          # Backend availability alert rule
 │   └── grafana/
 │       ├── dashboards/
 │       │   └── requestflow-backend-dashboard.json
@@ -1226,52 +1239,56 @@ requestflow/
 │
 ├── k8s/
 │   ├── monitoring/
-│   │   ├── prometheus-config.yml
 │   │   ├── prometheus.yml
+│   │   ├── prometheus-config.yml                       # Backend availability alert rule
 │   │   ├── grafana-provisioning.yml
 │   │   ├── grafana-dashboard-configmap.yml
 │   │   └── grafana.yml
 │   ├── namespace.yml
 │   ├── configmap.yml
 │   ├── secret.example.yml
-│   ├── secret.local.yml                    # Local only; ignored by Git
-│   ├── postgres.yml                        # PostgreSQL StatefulSet, Service, and PVC
-│   ├── backend.yml                         # FastAPI Deployment and Service
-│   ├── frontend.yml                        # React/Nginx Deployment and Service
-│   ├── ingress.yml                         # Traefik routes and StripPrefix middleware
-│   └── traefik-values.yml                  # Helm values for Traefik
+│   ├── secret.local.yml                                # Local only; ignored by Git
+│   ├── postgres.yml                                    # PostgreSQL StatefulSet, Service, and PVC
+│   ├── backend.yml                                     # FastAPI Deployment and Service
+│   ├── frontend.yml                                    # React/Nginx Deployment and Service
+│   ├── ingress.yml                                     # Traefik routes and StripPrefix middleware
+│   └── traefik-values.yml                              # Helm values for Traefik
 │
 ├── scripts/
-│   ├── deploy-k8s.ps1                      # Repeatable Kubernetes deployment
-│   └── verify-k8s.ps1                      # Ingress and health verification
+│   ├── deploy-k8s.ps1                                  # Repeatable Kubernetes deployment
+│   └── verify-k8s.ps1                                  # Ingress and health verification
 │
 │
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml                          # Test and build validation
-│       └── docker-publish.yml              # GHCR image publishing
-│       └── security.yml                    # Trivy container vulnerability scanning
+│       ├── ci.yml                                      # Test and build validation
+│       ├── docker-publish.yml                          # GHCR image publishing
+│       └── security.yml                                # Trivy container vulnerability scanning
 ├── assets/
-│   └── AppUIScreenshot.png                 # Screenshot for README
+│   ├── app/
+│   │   ├── login-page.png
+│   │   ├── user-requests.png
+│   │   ├── admin-request-detail.png
+│   │   └── api-documentation.png
 │   └── devops/
 │       ├── kubernetes-before-recreation.png
 │       ├── kubernetes-clean-deployment.png
 │       ├── kubernetes-verification.png
 │       ├── prometheus-targets.png
+│       ├── prometheus-backend-down-alert.png
 │       ├── grafana-dashboard.png
 │       ├── grafana-datasource.png
 │       ├── github-actions-publish.png
 │       ├── github-actions-trivy.png
-│       ├── prometheus-backend-down-alert.png
 │       └── ghcr-packages.png
 │
-├── docker-compose.yml                      # Local frontend, backend, and PostgreSQL setup
-├── docker-compose.prod-local.yml           # Production-style local Nginx stack
-├── docker-compose.frontend-remote.yml      # Local frontend connected to deployed backend
-├── .env.remote.example                     # Example env file for remote backend testing
-├── .gitignore                              # Git ignore rules
-├── README.md                               # Project documentation
-└── LICENSE                                 # Project license
+├── docker-compose.yml                                  # Local frontend, backend, and PostgreSQL setup
+├── docker-compose.prod-local.yml                       # Production-style local Nginx stack
+├── docker-compose.frontend-remote.yml                  # Local frontend connected to deployed backend
+├── .env.remote.example                                 # Example env file for remote backend testing
+├── .gitignore                                          # Git ignore rules
+├── README.md                                           # Project documentation
+└── LICENSE                                             # Project license
 ```
 
 ---
@@ -1286,12 +1303,11 @@ requestflow/
 - The project is deployed for portfolio demonstration, but production hardening is still limited.
 - The deployed backend may take longer to respond after inactivity because the Render free web service can spin down and wake on the next request.
 - Admin account promotion is currently done manually through PostgreSQL.
-- The backend uses SQLAlchemy table creation rather than versioned Alembic migrations.
 - User management is limited; admins cannot yet promote or demote users through the frontend.
 - The application should not be used for real confidential IT tickets without stronger production security controls.
 - Kubernetes secrets are managed through a local ignored manifest rather than an external secret manager.
 - The Ingress currently uses local HTTP rather than trusted HTTPS.
-- Prometheus and Grafana are configured for local monitoring and do not currently send external notifications.
+- Prometheus and Grafana are configured for local monitoring; the alert rule is evaluated successfully, but no Alertmanager notification receiver is configured.
 
 ### Future Improvements
 
@@ -1299,7 +1315,6 @@ requestflow/
 - Add search, filter, and sorting for requests.
 - Add request assignment to specific admins or support staff.
 - Add request analytics dashboard.
-- Add database migrations with Alembic.
 - Improve production deployment with database migrations, stronger monitoring, and automated release checks.
 - Add email notifications for request updates
 - Add file attachment support for service requests.
@@ -1307,11 +1322,12 @@ requestflow/
 - Improve UI styling with a component library or design system.
 - Add Kubernetes NetworkPolicies between frontend, backend, PostgreSQL, Prometheus, and Grafana.
 - Add TLS/HTTPS termination for Traefik.
-- Add Prometheus alert rules and Alertmanager.
-- Add container vulnerability scanning and dependency scanning to CI.
 - Create a separate networking or cloud branch for cloud VM or managed Kubernetes deployment.
 - Optionally package the Kubernetes resources with Kustomize or Helm.
 - Run clean-state Kubernetes deployment verification automatically in CI using an ephemeral test cluster.
+- Add Alertmanager with email, Slack, or another external notification receiver.
+- Add dependency-update automation, secret scanning, and software bill of materials generation.
+- Add a production release workflow with migration approval, smoke testing, and rollback documentation.
 
 ---
 
