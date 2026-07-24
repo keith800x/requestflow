@@ -51,7 +51,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-Instrumentator().instrument(app).expose(app)
+instrumentator = Instrumentator(
+    should_respect_env_var=True,
+    env_var_name="ENABLE_METRICS",
+    excluded_handlers=["/metrics"],
+)
+
+instrumentator.instrument(app).expose(
+    app,
+    include_in_schema=False,
+)
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(

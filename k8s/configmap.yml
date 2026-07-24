@@ -6,6 +6,7 @@ metadata:
 data:
   ENVIRONMENT: "development"
   ALLOWED_ORIGINS: "http://localhost:8080"
+  ENABLE_METRICS: "true"
 
   POSTGRES_DB: "requestflow_db"
   POSTGRES_USER: "requestflow_user"

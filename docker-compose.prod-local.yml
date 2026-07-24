@@ -39,6 +39,8 @@ services:
       JWT_SECRET_KEY: dev-secret-key-change-this-later
       ENVIRONMENT: development
       ALLOWED_ORIGINS: http://localhost:8080
+      ENABLE_METRICS: "true"
+
 
     command:
     - uvicorn
