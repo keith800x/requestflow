@@ -1,0 +1,25 @@
+
+; <<>> DiG 9.18.37 <<>> requestflow.test A
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 34032
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+; COOKIE: cd9c47dfce494444 (echoed)
+;; QUESTION SECTION:
+;requestflow.test.		IN	A
+
+;; ANSWER SECTION:
+requestflow.test.	300	IN	A	10.10.30.10
+
+;; AUTHORITY SECTION:
+requestflow.test.	300	IN	NS	dns.requestflow.test.
+
+;; Query time: 4 msec
+;; SERVER: 127.0.0.11#53(127.0.0.11) (UDP)
+;; WHEN: Wed Jul 29 09:57:48 UTC 2026
+;; MSG SIZE  rcvd: 91
+

@@ -1,0 +1,7 @@
+80: eth4@if81: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9500 qdisc noqueue state UP group default 
+    link/ether aa:c1:ab:24:56:d8 brd ff:ff:ff:ff:ff:ff link-netnsid 3
+    altname clab-o-05d67223e60dd16c
+    inet 10.10.40.1/24 scope global eth4
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a8c1:abff:fe24:56d8/64 scope link 
+       valid_lft forever preferred_lft forever

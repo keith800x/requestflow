@@ -1,0 +1,49 @@
+maxprocs: Leaving GOMAXPROCS=16: CPU quota undefined
+requestflow.test.:53
+CoreDNS-1.14.6
+linux/amd64, go1.26.5, 424d125
+[INFO] 10.10.10.21:38491 - 28174 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000447215s
+[INFO] 10.10.10.21:57465 - 13809 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000092809s
+[INFO] 10.10.10.21:58203 - 16476 "A IN www.requestflow.test. udp 61 false 1232" NOERROR qr,aa,rd 170 0.000133677s
+[INFO] 10.10.10.21:50797 - 20445 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000120452s
+[INFO] 10.10.10.21:36015 - 35528 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000101787s
+[INFO] 10.10.10.21:37953 - 19982 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000092349s
+[INFO] 10.10.10.21:40961 - 35696 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000093771s
+[INFO] 10.10.20.21:34746 - 14836 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.00011399s
+[INFO] 10.10.10.21:56565 - 49496 "A IN www.requestflow.test. udp 61 false 1232" NOERROR qr,aa,rd 170 0.000091396s
+[INFO] 10.10.10.21:60036 - 56835 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000110934s
+[INFO] 10.10.10.21:40260 - 57241 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000150629s
+[INFO] 10.10.10.21:36394 - 6190 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.00008293s
+[INFO] 10.10.10.21:35015 - 6030 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000143456s
+[INFO] 10.10.20.21:51746 - 30630 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000096636s
+[INFO] 10.10.20.21:42120 - 30244 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000121936s
+[INFO] 10.10.20.21:44306 - 39002 "AAAA IN www.requestflow.test. udp 38 false 512" NOERROR qr,aa,rd 138 0.000083101s
+[INFO] 10.10.20.21:51350 - 38892 "A IN www.requestflow.test. udp 38 false 512" NOERROR qr,aa,rd 170 0.000107517s
+[INFO] 10.10.10.21:43325 - 8434 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000163896s
+[INFO] 10.10.10.21:49599 - 64711 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.00007754s
+[INFO] 10.10.20.21:57374 - 26467 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000092438s
+[INFO] 10.10.10.21:60319 - 35597 "A IN www.requestflow.test. udp 61 false 1232" NOERROR qr,aa,rd 170 0.00009371s
+[INFO] 10.10.10.21:55792 - 57245 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000090034s
+[INFO] 10.10.10.21:49061 - 57065 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000100213s
+[INFO] 10.10.10.21:38740 - 63120 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000091406s
+[INFO] 10.10.10.21:39211 - 62744 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000117475s
+[INFO] 10.10.20.21:55416 - 32950 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000083842s
+[INFO] 10.10.20.21:57118 - 33070 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000107562s
+[INFO] 10.10.20.21:46407 - 31985 "AAAA IN www.requestflow.test. udp 38 false 512" NOERROR qr,aa,rd 138 0.000106084s
+[INFO] 10.10.20.21:52899 - 31579 "A IN www.requestflow.test. udp 38 false 512" NOERROR qr,aa,rd 170 0.000156261s
+[INFO] 10.10.10.21:41409 - 53123 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000087839s
+[INFO] 10.10.10.21:37438 - 25912 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.00008294s
+[INFO] 10.10.20.21:59388 - 50297 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000092057s
+[INFO] 10.10.10.21:33272 - 17328 "A IN www.requestflow.test. udp 61 false 1232" NOERROR qr,aa,rd 170 0.00008841s
+[INFO] 10.10.10.21:42026 - 32912 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000085765s
+[INFO] 10.10.10.21:33192 - 33102 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000054365s
+[INFO] 10.10.10.21:48639 - 46089 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000087618s
+[INFO] 10.10.10.21:43286 - 45919 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000112386s
+[INFO] 10.10.20.21:49972 - 62670 "A IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 116 0.000103759s
+[INFO] 10.10.20.21:35289 - 62780 "AAAA IN requestflow.test. udp 34 false 512" NOERROR qr,aa,rd 128 0.000141271s
+[INFO] 10.10.20.21:51127 - 41874 "AAAA IN www.requestflow.test. udp 38 false 512" NOERROR qr,aa,rd 138 0.000087048s
+[INFO] 10.10.20.21:34563 - 41723 "A IN www.requestflow.test. udp 38 false 512" NOERROR qr,aa,rd 170 0.000117902s
+[INFO] 10.10.10.21:34127 - 4596 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000079423s
+[INFO] 10.10.10.21:53840 - 9754 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000085785s
+[INFO] 10.10.20.21:59336 - 34032 "A IN requestflow.test. udp 57 false 1232" NOERROR qr,aa,rd 116 0.000089242s
+[INFO] 10.10.10.21:35883 - 34305 "A IN www.requestflow.test. udp 61 false 1232" NOERROR qr,aa,rd 170 0.000096897s

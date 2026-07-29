@@ -1,0 +1,5 @@
+requestflow.test:53 {
+    errors
+    log
+    file /etc/coredns/db.requestflow.test
+}

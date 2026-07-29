@@ -1,0 +1,16 @@
+$ORIGIN requestflow.test.
+$TTL 300
+
+@ IN SOA dns.requestflow.test. admin.requestflow.test. (
+    2026072901 ; serial
+    3600       ; refresh
+    900        ; retry
+    604800     ; expire
+    300        ; minimum TTL
+)
+
+@   IN NS    dns.requestflow.test.
+dns IN A     10.10.40.53
+
+@   IN A     10.10.30.10
+www IN CNAME requestflow.test.
