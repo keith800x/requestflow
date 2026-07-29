@@ -1,0 +1,6 @@
+DNS result:                     10.10.30.10
+HTTP readiness result:          {"status":"ready"}
+DNS packet count:               2
+HTTP packet count:              10
+Blocked ingress packet count:   2
+Blocked egress packet count:    0

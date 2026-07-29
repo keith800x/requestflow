@@ -1,0 +1,4 @@
+Expected egress packet count: 0
+Actual egress packet count:   0
+
+reading from file /home/clab/requestflow/network-lab/containerlab/evidence/phase2e/pcap/blocked-user-admin-egress.pcap, link-type EN10MB (Ethernet), snapshot length 262144

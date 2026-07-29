@@ -1,0 +1,106 @@
+reading from file /home/clab/requestflow/network-lab/containerlab/evidence/phase2e/pcap/http-user.pcap, link-type EN10MB (Ethernet), snapshot length 262144
+19:18:33.162474 IP 10.10.10.21.59920 > 10.10.30.10.80: Flags [S], seq 2828775431, win 56760, options [mss 9460,sackOK,TS val 4102727595 ecr 0,nop,wscale 10], length 0
+E..<..@.@..t
+
+
+.
+
+.
+...P............/.....$....
+...........
+
+19:18:33.162575 IP 10.10.30.10.80 > 10.10.10.21.59920: Flags [S.], seq 1486443358, ack 2828775432, win 56688, options [mss 9460,sackOK,TS val 2630532398 ecr 4102727595,nop,wscale 10], length 0
+E..<..@.?...
+
+.
+
+
+
+..P..X.S^.......p).....$....
+...........
+
+19:18:33.162588 IP 10.10.10.21.59920 > 10.10.30.10.80: Flags [.], ack 1, win 56, options [nop,nop,TS val 4102727595 ecr 2630532398], length 0
+E..4..@.@..{
+
+
+.
+
+.
+...P....X.S_...8U%.....
+........
+19:18:33.162754 IP 10.10.10.21.59920 > 10.10.30.10.80: Flags [P.], seq 1:109, ack 1, win 56, options [nop,nop,TS val 4102727595 ecr 2630532398], length 108: HTTP: GET /api/ready HTTP/1.1
+E.....@.@...
+
+
+.
+
+.
+...P....X.S_...8+......
+........GET /api/ready HTTP/1.1
+Host: requestflow.test
+User-Agent: curl/8.12.1
+Accept: */*
+Connection: close
+
+
+19:18:33.162767 IP 10.10.30.10.80 > 10.10.10.21.59920: Flags [.], ack 109, win 56, options [nop,nop,TS val 2630532398 ecr 4102727595], length 0
+E..4..@.?...
+
+.
+
+
+
+..P..X.S_...t...8T......
+........
+19:18:33.186324 IP 10.10.30.10.80 > 10.10.10.21.59920: Flags [P.], seq 1:168, ack 109, win 56, options [nop,nop,TS val 2630532422 ecr 4102727595], length 167: HTTP: HTTP/1.1 200 OK
+E.....@.?...
+
+.
+
+
+
+..P..X.S_...t...8N .....
+...F....HTTP/1.1 200 OK
+Server: nginx/1.31.3
+Date: Wed, 29 Jul 2026 11:18:33 GMT
+Content-Type: application/json
+Content-Length: 18
+Connection: close
+
+{"status":"ready"}
+19:18:33.186350 IP 10.10.10.21.59920 > 10.10.30.10.80: Flags [.], ack 168, win 56, options [nop,nop,TS val 4102727619 ecr 2630532422], length 0
+E..4..@.@..y
+
+
+.
+
+.
+...P...tX.T....8S......
+.......F
+19:18:33.186489 IP 10.10.10.21.59920 > 10.10.30.10.80: Flags [F.], seq 109, ack 168, win 56, options [nop,nop,TS val 4102727619 ecr 2630532422], length 0
+E..4..@.@..x
+
+
+.
+
+.
+...P...tX.T....8S......
+.......F
+19:18:33.186532 IP 10.10.30.10.80 > 10.10.10.21.59920: Flags [F.], seq 168, ack 110, win 56, options [nop,nop,TS val 2630532422 ecr 4102727619], length 0
+E..4..@.?...
+
+.
+
+
+
+..P..X.T....u...8S......
+...F....
+19:18:33.186547 IP 10.10.10.21.59920 > 10.10.30.10.80: Flags [.], ack 169, win 56, options [nop,nop,TS val 4102727619 ecr 2630532422], length 0
+E..4..@.@..w
+
+
+.
+
+.
+...P...uX.T....8S......
+.......F

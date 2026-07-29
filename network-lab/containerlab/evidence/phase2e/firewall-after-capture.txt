@@ -1,0 +1,15 @@
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+num      pkts      bytes target     prot opt in     out     source               destination         
+1           2      168 DROP       0    --  *      *       10.10.10.0/24        10.10.20.0/24       
+2           0        0 DROP       0    --  *      *       10.10.20.0/24        10.10.10.0/24       
+3          12     1218 ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+4           3      209 ACCEPT     17   --  *      *       10.10.10.0/24        10.10.40.53          udp dpt:53 ctstate NEW
+5           0        0 ACCEPT     17   --  *      *       10.10.20.0/24        10.10.40.53          udp dpt:53 ctstate NEW
+6           0        0 ACCEPT     6    --  *      *       10.10.10.0/24        10.10.40.53          tcp dpt:53 ctstate NEW
+7           0        0 ACCEPT     6    --  *      *       10.10.20.0/24        10.10.40.53          tcp dpt:53 ctstate NEW
+8           1       60 ACCEPT     6    --  *      *       10.10.10.0/24        10.10.30.10          tcp dpt:80 ctstate NEW
+9           0        0 ACCEPT     6    --  *      *       10.10.20.0/24        10.10.30.10          tcp dpt:80 ctstate NEW
+10          0        0 ACCEPT     1    --  *      *       10.10.10.0/24        10.10.40.53          icmptype 8
+11          0        0 ACCEPT     1    --  *      *       10.10.20.0/24        10.10.40.53          icmptype 8
+12          0        0 ACCEPT     1    --  *      *       10.10.10.0/24        10.10.30.10          icmptype 8
+13          0        0 ACCEPT     1    --  *      *       10.10.20.0/24        10.10.30.10          icmptype 8

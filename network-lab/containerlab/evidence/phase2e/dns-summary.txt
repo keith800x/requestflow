@@ -1,0 +1,5 @@
+reading from file /home/clab/requestflow/network-lab/containerlab/evidence/phase2e/pcap/dns-user.pcap, link-type EN10MB (Ethernet), snapshot length 262144
+19:18:28.137466 IP (tos 0x0, ttl 64, id 29022, offset 0, flags [DF], proto UDP (17), length 85)
+    10.10.10.21.47193 > 10.10.40.53.53: [udp sum ok] 3305+ [1au] A? requestflow.test. ar: . OPT UDPsize=1232 [COOKIE 012de6fa947041d6] (57)
+19:18:28.142534 IP (tos 0x0, ttl 63, id 45206, offset 0, flags [DF], proto UDP (17), length 167)
+    10.10.40.53.53 > 10.10.10.21.47193: [udp sum ok] 3305*- q: A? requestflow.test. 1/1/1 requestflow.test. A 10.10.30.10 ns: requestflow.test. NS dns.requestflow.test. ar: . OPT UDPsize=1232 [COOKIE 012de6fa947041d6] (139)
