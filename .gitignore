@@ -74,3 +74,6 @@ logs/
 
 # Local Kubernetes secrets
 k8s/secret.local.yml
+
+# Containerlab-generated runtime files
+network-lab/containerlab/clab-*/
