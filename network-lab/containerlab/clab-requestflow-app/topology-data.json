@@ -1,0 +1,232 @@
+{
+  "name": "requestflow-app",
+  "type": "clab",
+  "clab": {
+    "config": {
+      "prefix": "clab",
+      "mgmt": {
+        "network": "clab",
+        "bridge": "br-0301f2e793f1",
+        "ipv4-subnet": "172.20.20.0/24",
+        "ipv4-gw": "172.20.20.1",
+        "ipv6-subnet": "3fff:172:20:20::/64",
+        "ipv6-gw": "3fff:172:20:20::1",
+        "external-access": true
+      }
+    }
+  },
+  "ssh-pub-keys": ["ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBE9Ad+0Ydty6odAGN6RHlVrU8oCqPozxLUPW2iZUtrt4vGVTkx/gfArYiJ5P8/tgAOBamzYKg6O3djd2uDJx0Bc="],
+  "nodes": {
+    "requestflow-net-frontend": {
+      "index": "0",
+      "shortname": "requestflow-net-frontend",
+      "longname": "requestflow-net-frontend",
+      "fqdn": "requestflow-net-frontend.requestflow-app.io",
+      "group": "",
+      "labdir": "/home/clab/requestflow/network-lab/containerlab/clab-requestflow-app/requestflow-net-frontend",
+      "kind": "ext-container",
+      "image": "",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.19.0.4",
+      "mgmt-ipv4-prefix-length": 16,
+      "mgmt-ipv6-address": "",
+      "mgmt-ipv6-prefix-length": 0,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-0301f2e793f1",
+        "clab-node-group": "",
+        "clab-node-kind": "ext-container",
+        "clab-node-lab-dir": "/home/clab/requestflow/network-lab/containerlab/clab-requestflow-app/requestflow-net-frontend",
+        "clab-node-longname": "requestflow-net-frontend",
+        "clab-node-name": "requestflow-net-frontend",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/requestflow/network-lab/containerlab/requestflow.clab.yml",
+        "containerlab": "requestflow-app"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "0.0.0.0",
+          "host-port": 8080,
+          "port": 80,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "::",
+          "host-port": 8080,
+          "port": 80,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "router": {
+      "index": "1",
+      "shortname": "router",
+      "longname": "clab-requestflow-app-router",
+      "fqdn": "router.requestflow-app.io",
+      "group": "",
+      "labdir": "/home/clab/requestflow/network-lab/containerlab/clab-requestflow-app/router",
+      "kind": "linux",
+      "image": "ghcr.io/srl-labs/network-multitool:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.2",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::2",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-0301f2e793f1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/clab/requestflow/network-lab/containerlab/clab-requestflow-app/router",
+        "clab-node-longname": "clab-requestflow-app-router",
+        "clab-node-name": "router",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/requestflow/network-lab/containerlab/requestflow.clab.yml",
+        "containerlab": "requestflow-app"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 1180,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 22,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 443,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 80,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 8080,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 11443,
+          "protocol": "tcp"
+        }
+      ]
+    },
+    "user-client": {
+      "index": "2",
+      "shortname": "user-client",
+      "longname": "clab-requestflow-app-user-client",
+      "fqdn": "user-client.requestflow-app.io",
+      "group": "",
+      "labdir": "/home/clab/requestflow/network-lab/containerlab/clab-requestflow-app/user-client",
+      "kind": "linux",
+      "image": "ghcr.io/srl-labs/network-multitool:latest",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.3",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::3",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-0301f2e793f1",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/clab/requestflow/network-lab/containerlab/clab-requestflow-app/user-client",
+        "clab-node-longname": "clab-requestflow-app-user-client",
+        "clab-node-name": "user-client",
+        "clab-node-type": "",
+        "clab-owner": "clab",
+        "clab-topo-file": "/home/clab/requestflow/network-lab/containerlab/requestflow.clab.yml",
+        "containerlab": "requestflow-app"
+      },
+      "port-bindings": [
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 11443,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 1180,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 22,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 443,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 80,
+          "protocol": "tcp"
+        },
+        {
+          "host-ip": "",
+          "host-port": 0,
+          "port": 8080,
+          "protocol": "tcp"
+        }
+      ]
+    }
+  },
+  "links": [
+    {
+      "endpoints": {
+        "a": {
+          "node": "user-client",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:b7:96:8e",
+          "peer": "z"
+        },
+        "z": {
+          "node": "router",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:af:ca:df",
+          "peer": "a"
+        }
+      }
+    },
+    {
+      "endpoints": {
+        "a": {
+          "node": "router",
+          "interface": "eth2",
+          "mac": "aa:c1:ab:95:5c:e6",
+          "peer": "z"
+        },
+        "z": {
+          "node": "requestflow-net-frontend",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:13:8b:ef",
+          "peer": "a"
+        }
+      }
+    }
+  ]
+}

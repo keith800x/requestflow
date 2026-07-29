@@ -1,0 +1,18 @@
+services:
+  postgres:
+    container_name: requestflow-net-postgres
+
+  backend:
+    container_name: requestflow-net-backend
+
+  frontend:
+    container_name: requestflow-net-frontend
+
+    cap_add:
+      - NET_ADMIN
+
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.network-lab
+      args:
+        VITE_API_BASE_URL: /api

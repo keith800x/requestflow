@@ -1,0 +1,16 @@
+---
+requestflow-net-frontend:
+    username: 
+    password: 
+    platform: ext-container
+    hostname: 172.19.0.4
+router:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.2
+user-client:
+    username: 
+    password: 
+    platform: linux
+    hostname: 172.20.20.3
