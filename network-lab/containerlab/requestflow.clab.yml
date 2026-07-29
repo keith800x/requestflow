@@ -10,6 +10,7 @@ topology:
           - 10.10.40.53
       exec:
         - ip address replace 10.10.10.21/24 dev eth1
+        - ip route replace 10.10.20.0/24 via 10.10.10.1 dev eth1
         - ip route replace 10.10.30.0/24 via 10.10.10.1 dev eth1
         - ip route replace 10.10.40.0/24 via 10.10.10.1 dev eth1
 
@@ -21,6 +22,7 @@ topology:
           - 10.10.40.53
       exec:
         - ip address replace 10.10.20.21/24 dev eth1
+        - ip route replace 10.10.10.0/24 via 10.10.20.1 dev eth1
         - ip route replace 10.10.30.0/24 via 10.10.20.1 dev eth1
         - ip route replace 10.10.40.0/24 via 10.10.20.1 dev eth1
 
@@ -29,11 +31,14 @@ topology:
       image: ghcr.io/srl-labs/network-multitool:latest
       sysctls:
         net.ipv4.ip_forward: 1
+      binds:
+        - firewall/router-firewall.sh:/etc/requestflow/router-firewall.sh:ro
       exec:
         - ip address replace 10.10.10.1/24 dev eth1
         - ip address replace 10.10.30.1/24 dev eth2
         - ip address replace 10.10.20.1/24 dev eth3
         - ip address replace 10.10.40.1/24 dev eth4
+        - sh /etc/requestflow/router-firewall.sh
 
     requestflow-net-frontend:
       kind: ext-container
