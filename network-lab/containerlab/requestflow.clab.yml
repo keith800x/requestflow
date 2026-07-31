@@ -1,5 +1,10 @@
 name: requestflow-app
 
+mgmt:
+  network: requestflow-clab-mgmt
+  ipv4-subnet: auto
+  ipv6-subnet: auto
+
 topology:
   nodes:
     user-client:
@@ -13,6 +18,8 @@ topology:
         - ip route replace 10.10.20.0/24 via 10.10.10.1 dev eth1
         - ip route replace 10.10.30.0/24 via 10.10.10.1 dev eth1
         - ip route replace 10.10.40.0/24 via 10.10.10.1 dev eth1
+        - ip route replace 10.10.50.0/24 via 10.10.10.1 dev eth1
+        - ip route replace 10.10.60.0/24 via 10.10.10.1 dev eth1
 
     admin-client:
       kind: linux
@@ -25,6 +32,8 @@ topology:
         - ip route replace 10.10.10.0/24 via 10.10.20.1 dev eth1
         - ip route replace 10.10.30.0/24 via 10.10.20.1 dev eth1
         - ip route replace 10.10.40.0/24 via 10.10.20.1 dev eth1
+        - ip route replace 10.10.50.0/24 via 10.10.20.1 dev eth1
+        - ip route replace 10.10.60.0/24 via 10.10.20.1 dev eth1
 
     router:
       kind: linux
@@ -38,6 +47,8 @@ topology:
         - ip address replace 10.10.30.1/24 dev eth2
         - ip address replace 10.10.20.1/24 dev eth3
         - ip address replace 10.10.40.1/24 dev eth4
+        - ip address replace 10.10.50.1/24 dev eth5
+        - ip address replace 10.10.60.1/24 dev eth6
         - sh /etc/requestflow/router-firewall.sh
 
     requestflow-net-frontend:
@@ -47,6 +58,8 @@ topology:
         - ip route replace 10.10.10.0/24 via 10.10.30.1 dev eth1
         - ip route replace 10.10.20.0/24 via 10.10.30.1 dev eth1
         - ip route replace 10.10.40.0/24 via 10.10.30.1 dev eth1
+        - ip route replace 10.10.50.0/24 via 10.10.30.1 dev eth1
+        - ip route replace 10.10.60.0/24 via 10.10.30.1 dev eth1
 
     dns-server:
       kind: linux
@@ -56,6 +69,19 @@ topology:
         - ip route replace 10.10.10.0/24 via 10.10.40.1 dev eth1
         - ip route replace 10.10.20.0/24 via 10.10.40.1 dev eth1
         - ip route replace 10.10.30.0/24 via 10.10.40.1 dev eth1
+
+    requestflow-net-backend:
+      kind: ext-container
+      exec:
+        - ip address replace 10.10.50.10/24 dev eth1
+        - ip route replace 10.10.30.0/24 via 10.10.50.1 dev eth1
+        - ip route replace 10.10.60.0/24 via 10.10.50.1 dev eth1
+
+    requestflow-net-postgres:
+      kind: ext-container
+      exec:
+        - ip address replace 10.10.60.10/24 dev eth1
+        - ip route replace 10.10.50.0/24 via 10.10.60.1 dev eth1
 
   links:
     - endpoints:
@@ -73,3 +99,11 @@ topology:
     - endpoints:
         - router:eth4
         - dns-server:eth1
+
+    - endpoints:
+        - router:eth5
+        - requestflow-net-backend:eth1
+
+    - endpoints:
+        - router:eth6
+        - requestflow-net-postgres:eth1

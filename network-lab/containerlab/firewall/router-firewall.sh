@@ -3,16 +3,23 @@ set -eu
 
 USER_SUBNET="10.10.10.0/24"
 ADMIN_SUBNET="10.10.20.0/24"
+
 FRONTEND_IP="10.10.30.10"
 DNS_IP="10.10.40.53"
+BACKEND_IP="10.10.50.10"
+DATABASE_IP="10.10.60.10"
 
 echo "Applying RequestFlow router firewall policy..."
 
-# Start from a predictable FORWARD configuration.
+# Start from a predictable, deny-by-default forwarding policy.
+iptables -P FORWARD DROP
 iptables -F FORWARD
 
+# ---------------------------------------------------------------------------
+# Explicitly blocked network paths
+# ---------------------------------------------------------------------------
+
 # Block direct communication between User and Admin networks.
-# These explicit rules also provide useful packet counters.
 iptables -A FORWARD \
   -s "$USER_SUBNET" \
   -d "$ADMIN_SUBNET" \
@@ -23,11 +30,43 @@ iptables -A FORWARD \
   -d "$USER_SUBNET" \
   -j DROP
 
-# Permit reply traffic for previously allowed connections.
+# Users must access the application through the Frontend only.
+iptables -A FORWARD \
+  -s "$USER_SUBNET" \
+  -d "$BACKEND_IP" \
+  -j DROP
+
+iptables -A FORWARD \
+  -s "$ADMIN_SUBNET" \
+  -d "$BACKEND_IP" \
+  -j DROP
+
+# Users must never connect directly to PostgreSQL.
+iptables -A FORWARD \
+  -s "$USER_SUBNET" \
+  -d "$DATABASE_IP" \
+  -j DROP
+
+iptables -A FORWARD \
+  -s "$ADMIN_SUBNET" \
+  -d "$DATABASE_IP" \
+  -j DROP
+
+# Nginx may communicate with FastAPI, but not directly with PostgreSQL.
+iptables -A FORWARD \
+  -s "$FRONTEND_IP" \
+  -d "$DATABASE_IP" \
+  -j DROP
+
+# Permit reply traffic for connections allowed below.
 iptables -A FORWARD \
   -m conntrack \
   --ctstate ESTABLISHED,RELATED \
   -j ACCEPT
+
+# ---------------------------------------------------------------------------
+# DNS access
+# ---------------------------------------------------------------------------
 
 # Permit User and Admin DNS queries over UDP.
 iptables -A FORWARD \
@@ -67,7 +106,11 @@ iptables -A FORWARD \
   --ctstate NEW \
   -j ACCEPT
 
-# Permit access to the RequestFlow Nginx frontend.
+# ---------------------------------------------------------------------------
+# Application-tier access
+# ---------------------------------------------------------------------------
+
+# User and Admin clients may access only the Nginx frontend.
 iptables -A FORWARD \
   -s "$USER_SUBNET" \
   -d "$FRONTEND_IP" \
@@ -86,7 +129,31 @@ iptables -A FORWARD \
   --ctstate NEW \
   -j ACCEPT
 
-# Permit diagnostic ICMP only to DNS and the frontend.
+# Nginx may proxy API requests to FastAPI.
+iptables -A FORWARD \
+  -s "$FRONTEND_IP" \
+  -d "$BACKEND_IP" \
+  -p tcp \
+  --dport 8000 \
+  -m conntrack \
+  --ctstate NEW \
+  -j ACCEPT
+
+# FastAPI may connect to PostgreSQL.
+iptables -A FORWARD \
+  -s "$BACKEND_IP" \
+  -d "$DATABASE_IP" \
+  -p tcp \
+  --dport 5432 \
+  -m conntrack \
+  --ctstate NEW \
+  -j ACCEPT
+
+# ---------------------------------------------------------------------------
+# Limited diagnostic ICMP
+# ---------------------------------------------------------------------------
+
+# Permit User and Admin ping tests only to DNS and Frontend.
 iptables -A FORWARD \
   -s "$USER_SUBNET" \
   -d "$DNS_IP" \
@@ -114,8 +181,5 @@ iptables -A FORWARD \
   -p icmp \
   --icmp-type echo-request \
   -j ACCEPT
-
-# Deny anything that was not explicitly permitted above.
-iptables -P FORWARD DROP
 
 echo "RequestFlow router firewall policy applied."

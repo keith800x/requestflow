@@ -1,0 +1,52 @@
+============================================================
+ RequestFlow Phase 2F Verification
+============================================================
+
+PASS: Backend container is healthy
+PASS: PostgreSQL container is healthy
+PASS: Frontend has 10.10.30.10/24 on eth1
+PASS: Backend has 10.10.50.10/24 on eth1
+PASS: PostgreSQL has 10.10.60.10/24 on eth1
+PASS: DNS resolves requestflow.test to the Frontend
+PASS: Frontend can reach Backend health endpoint
+PASS: Backend readiness confirms PostgreSQL access
+PASS: User can reach the complete application path
+PASS: Admin can reach the complete application path
+PASS: User cannot access Backend directly
+PASS: Admin cannot access Backend directly
+PASS: User cannot access PostgreSQL directly
+PASS: Admin cannot access PostgreSQL directly
+PASS: Frontend cannot bypass Backend and access PostgreSQL
+PASS: Firewall default forwarding policy is DROP
+PASS: Firewall permits Frontend to Backend on TCP 8000
+PASS: Firewall permits Backend to PostgreSQL on TCP 5432
+
+Firewall counters:
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+num      pkts      bytes target     prot opt in     out     source               destination         
+1           0        0 DROP       0    --  *      *       10.10.10.0/24        10.10.20.0/24       
+2           0        0 DROP       0    --  *      *       10.10.20.0/24        10.10.10.0/24       
+3           5      300 DROP       0    --  *      *       10.10.10.0/24        10.10.50.10         
+4           5      300 DROP       0    --  *      *       10.10.20.0/24        10.10.50.10         
+5           5      300 DROP       0    --  *      *       10.10.10.0/24        10.10.60.10         
+6           5      300 DROP       0    --  *      *       10.10.20.0/24        10.10.60.10         
+7           4      240 DROP       0    --  *      *       10.10.30.10          10.10.60.10         
+8         238    20855 ACCEPT     0    --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+9          10      666 ACCEPT     17   --  *      *       10.10.10.0/24        10.10.40.53          udp dpt:53 ctstate NEW
+10          4      248 ACCEPT     17   --  *      *       10.10.20.0/24        10.10.40.53          udp dpt:53 ctstate NEW
+11          0        0 ACCEPT     6    --  *      *       10.10.10.0/24        10.10.40.53          tcp dpt:53 ctstate NEW
+12          0        0 ACCEPT     6    --  *      *       10.10.20.0/24        10.10.40.53          tcp dpt:53 ctstate NEW
+13          4      240 ACCEPT     6    --  *      *       10.10.10.0/24        10.10.30.10          tcp dpt:80 ctstate NEW
+14          2      120 ACCEPT     6    --  *      *       10.10.20.0/24        10.10.30.10          tcp dpt:80 ctstate NEW
+15          8      480 ACCEPT     6    --  *      *       10.10.30.10          10.10.50.10          tcp dpt:8000 ctstate NEW
+16          2      120 ACCEPT     6    --  *      *       10.10.50.10          10.10.60.10          tcp dpt:5432 ctstate NEW
+17          0        0 ACCEPT     1    --  *      *       10.10.10.0/24        10.10.40.53          icmptype 8
+18          0        0 ACCEPT     1    --  *      *       10.10.20.0/24        10.10.40.53          icmptype 8
+19          0        0 ACCEPT     1    --  *      *       10.10.10.0/24        10.10.30.10          icmptype 8
+20          0        0 ACCEPT     1    --  *      *       10.10.20.0/24        10.10.30.10          icmptype 8
+
+============================================================
+Passed: 18
+Failed: 0
+============================================================
+Phase 2F verification completed successfully.

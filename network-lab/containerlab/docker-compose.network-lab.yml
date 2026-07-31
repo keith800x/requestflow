@@ -2,8 +2,58 @@ services:
   postgres:
     container_name: requestflow-net-postgres
 
+    build:
+      context: ./network-lab/containerlab/postgres
+      dockerfile: Dockerfile
+
+    image: requestflow-postgres-network-lab:1.0
+
+    cap_add:
+      - NET_ADMIN
+
+    # Do not expose PostgreSQL directly to the host in the segmented lab.
+    ports: !reset []
+
+    # PostgreSQL shares this network only with the one-time migration job.
+    networks: !override
+      - migration-network
+
+  migrate:
+    # Alembic still uses the Compose hostname "postgres" during startup.
+    networks: !override
+      - migration-network
+
   backend:
     container_name: requestflow-net-backend
+
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.network-lab
+
+    cap_add:
+      - NET_ADMIN
+
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Containerlab backend interface..."
+        until ip -4 addr show dev eth1 2>/dev/null |
+          grep -q '10.10.50.10/24'; do
+          sleep 1
+        done
+        echo "Containerlab interface ready. Starting FastAPI..."
+        exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+    environment:
+      DATABASE_URL: postgresql+psycopg://requestflow_user:requestflow_password@10.10.60.10:5432/requestflow_db
+
+    # Backend access must pass through the routed network.
+    ports: !reset []
+
+    # Prevent direct Docker-network communication with PostgreSQL/frontend.
+    networks: !override
+      - backend-management
 
   frontend:
     container_name: requestflow-net-frontend
@@ -16,3 +66,22 @@ services:
       dockerfile: Dockerfile.network-lab
       args:
         VITE_API_BASE_URL: /api
+
+    # Start Nginx even before the routed backend interface is attached.
+    depends_on: !reset {}
+
+    # Lab clients should access the frontend through 10.10.30.10.
+    ports: !reset []
+
+    networks: !override
+      - frontend-management
+
+networks:
+  migration-network:
+    internal: true
+
+  backend-management:
+    internal: true
+
+  frontend-management:
+    internal: true
