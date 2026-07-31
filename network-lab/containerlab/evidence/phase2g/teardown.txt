@@ -1,0 +1,18 @@
+
+[18:06:07] Destroying the Containerlab topology.
+Containerlab topology removed.
+
+[18:06:08] Removing RequestFlow Compose containers and networks.
+
+[18:06:10] Checking for remaining RequestFlow and Containerlab containers.
+No RequestFlow or RequestFlow Containerlab containers remain.
+
+[18:06:10] Checking PostgreSQL data volume.
+Preserved PostgreSQL volume: requestflow-net_requestflow_postgres_prod_local_data
+
+============================================================
+ Phase 2G teardown completed
+============================================================
+Application containers: removed
+Containerlab topology:   removed
+PostgreSQL data:         preserved
