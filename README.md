@@ -1470,13 +1470,21 @@ requestflow/
 │
 ├── network-lab/
 │   └── containerlab/
-│       ├── dns/                                        # CoreDNS image and zone configuration
-│       ├── firewall/                                   # Router iptables policy
-│       ├── postgres/                                   # PostgreSQL network-lab image
-│       ├── evidence/                                   # DNS, firewall, packet, and routed-tier evidence
-│       ├── requestflow.clab.yml                        # Routed network topology
-│       ├── docker-compose.network-lab.yml              # Network-lab Compose override
-│       └── verify-network-lab.sh                           # Automated network verification
+│       ├── dns/                                    # CoreDNS configuration
+│       ├── firewall/                               # Router firewall policy
+│       ├── postgres/                               # Network-lab PostgreSQL image
+│       ├── evidence/
+│       │   ├── dns/                                    # CoreDNS resolution evidence
+│       │   ├── firewall/                               # Segmentation and firewall evidence
+│       │   ├── packet-captures/                        # tcpdump and Wireshark evidence
+│       │   ├── routed-application-tiers/               # Frontend, backend and DB routing
+│       │   └── lifecycle-automation/                   # Deployment and teardown logs
+│       ├── requestflow.clab.yml                    # Routed network topology
+│       ├── docker-compose.network-lab.yml          # Compose network-lab override
+│       ├── capture-network-traffic.sh              # Packet-capture automation
+│       ├── deploy-network-lab.sh                   # Automated deployment
+│       ├── destroy-network-lab.sh                  # Automated teardown
+│       └── verify-network-lab.sh                   # Automated network verification
 │
 ├── .github/
 │   └── workflows/
