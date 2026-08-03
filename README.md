@@ -12,10 +12,12 @@
 ![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20Render%20%2B%20Neon-purple)
 ![Migrations](https://img.shields.io/badge/Migrations-Alembic-6BA81E)
 ![Security](https://img.shields.io/badge/Security-Trivy-1904DA)
+![Networking](https://img.shields.io/badge/Networking-Containerlab%20%2B%20CoreDNS%20%2B%20iptables-555555)
 ![CI](https://github.com/keith800x/requestflow/actions/workflows/ci.yml/badge.svg?branch=master)
-![Status](https://img.shields.io/badge/Status-MVP%20%2B%20DevOps%20Extension-brightgreen)
+![Status](https://img.shields.io/badge/Status-MVP%20%2B%20Infrastructure%20Extensions-brightgreen)
 
-A full-stack IT service request tracker that allows users to submit and track IT support requests, while admins can manage all requests, update statuses, delete requests, and add internal notes. The project also includes a DevOps extension covering containerisation, CI, GHCR image publishing, Kubernetes orchestration, Ingress routing, persistent storage, Alembic database migrations, health probes, Prometheus monitoring and alert rules, Grafana dashboard provisioning, Trivy container scanning, and repeatable deployment scripts. The public deployment uses Vercel for the frontend, Render for the API, and Neon PostgreSQL for the production database.
+A full-stack IT service request tracker built with React, TypeScript, FastAPI, and PostgreSQL. RequestFlow includes JWT authentication, role-based access control, request workflows, comments, admin-only internal notes, automated testing, CI, database migrations, container security scanning, public cloud deployment, a local Kubernetes environment, and a routed Containerlab network with CoreDNS, static routing, deny-by-default firewall segmentation, and packet-capture evidence. The public deployment uses Vercel for the frontend, Render for the API, and Neon PostgreSQL for the production database.
+
 
 ![RequestFlow login page](assets/app/login-page.png)
 
@@ -93,12 +95,25 @@ To improve reliability and maintainability, the project includes:
 - **Trivy container scanning** that fails CI on fixable HIGH or CRITICAL vulnerabilities.
 - **Prometheus alert rules** that detect when the backend cannot be scraped for more than one minute.
 - **Neon PostgreSQL** as the managed production database used by the Render backend.
+- **Containerlab networking** with separate User, Admin, Frontend, DNS, Backend, and Database subnets.
+- **CoreDNS** for authoritative resolution of `requestflow.test`.
+- **Linux routing and static routes** between application security zones.
+- **Deny-by-default iptables controls** permitting only required tier-to-tier communication.
+- **tcpdump and Wireshark evidence** for DNS, HTTP, and blocked traffic.
 
 ---
 
-## DevOps Extension
+## Infrastructure Extensions
 
-The DevOps work was developed separately on the `devops-extension` branch so that infrastructure changes could be tested without disrupting the stable `master` branch.
+The infrastructure work was developed incrementally on dedicated branches so that major changes could be tested without disrupting the stable `master` branch:
+
+- `devops-extension` for Kubernetes, observability, migrations, image publishing, and security scanning
+- `network-extension` for routed networking, DNS, firewall segmentation, packet inspection, and lifecycle automation
+
+
+### Kubernetes DevOps Extension
+
+The Kubernetes extension demonstrates container orchestration, persistent storage, health checks, database migrations, Ingress routing, monitoring, alerting, image publishing, security scanning, and clean-state recreation.
 
 The extension was completed incrementally:
 
@@ -119,6 +134,18 @@ Create safe Git branch
 → add the RequestFlowBackendDown Prometheus alert rule
 → migrate the production database from Render PostgreSQL to Neon PostgreSQL
 → add repeatable deployment and verification scripts
+```
+
+### Routed Networking Extension
+
+The networking extension separates the RequestFlow runtime into User, Admin, Frontend, DNS, Backend, and Database networks. A Linux router applies static routing and a deny-by-default `iptables` policy. CoreDNS resolves `requestflow.test`, while packet captures and firewall counters provide evidence of permitted and blocked flows.
+
+```text
+User/Admin
+→ CoreDNS and Linux router
+→ Frontend 10.10.30.10:80
+→ Backend 10.10.50.10:8000
+→ PostgreSQL 10.10.60.10:5432
 ```
 
 ### DevOps architecture
@@ -242,7 +269,7 @@ sequenceDiagram
 
 ![RequestFlow FastAPI documentation](assets/app/api-documentation.png)
 
-## DevOps Evidence
+## Kubernetes and DevOps Evidence
 
 The following screenshots document the clean-state Kubernetes recreation test, automated verification, monitoring setup, and container publishing pipeline.
 
@@ -378,6 +405,84 @@ The versioned frontend and backend images are published to GitHub Container Regi
 
 ![Published RequestFlow GHCR packages](assets/devops/ghcr-packages.png)
 
+## Networking Evidence
+
+### Routed Network Architecture
+
+```mermaid
+flowchart LR
+    User["User Client<br/>10.10.10.21"]
+    Admin["Admin Client<br/>10.10.20.21"]
+    Router["Linux Router<br/>iptables"]
+    DNS["CoreDNS<br/>10.10.40.53"]
+    Frontend["React / Nginx<br/>10.10.30.10"]
+    Backend["FastAPI<br/>10.10.50.10"]
+    Database[("PostgreSQL<br/>10.10.60.10")]
+
+    User -->|"DNS 53"| Router
+    Admin -->|"DNS 53"| Router
+    Router --> DNS
+
+    User -->|"HTTP 80"| Router
+    Admin -->|"HTTP 80"| Router
+    Router --> Frontend
+
+    Frontend -->|"TCP 8000"| Router
+    Router --> Backend
+
+    Backend -->|"TCP 5432"| Router
+    Router --> Database
+```
+
+All other inter-tier forwarding is denied unless it is explicitly permitted by the router firewall policy.
+
+### Routed Application Tiers
+
+The production-style network lab separates the RequestFlow application into
+independent routed subnets:
+
+| Tier | Address | Purpose |
+|---|---|---|
+| User | `10.10.10.0/24` | Standard client network |
+| Admin | `10.10.20.0/24` | Administrative client network |
+| Frontend | `10.10.30.10` | React application served by Nginx |
+| DNS | `10.10.40.53` | CoreDNS authoritative server |
+| Backend | `10.10.50.10` | FastAPI application |
+| Database | `10.10.60.10` | PostgreSQL database |
+
+Runtime application traffic follows this routed path:
+
+`User/Admin → Nginx → FastAPI → PostgreSQL`
+
+The router applies a deny-by-default firewall policy. Users and administrators
+may access the frontend but cannot connect directly to the backend or database.
+Nginx may access FastAPI only on TCP port 8000, while FastAPI may access
+PostgreSQL only on TCP port 5432.
+
+![Routed RequestFlow network topology](assets/networking/routed-network-topology.png)
+
+The automated verification script validates container health, interface
+addresses, DNS resolution, end-to-end application readiness, permitted
+application flows, blocked bypass attempts, and firewall rules.
+
+![Automated network lab verification](assets/networking/network-lab-verification.png)
+
+Packet counters confirm that permitted and denied flows pass through the
+Containerlab router.
+
+![Network segmentation firewall counters](assets/networking/network-firewall-counters.png)
+
+### Packet Inspection
+
+DNS queries, successful HTTP requests, and blocked cross-subnet connection attempts were captured with `tcpdump` and inspected in Wireshark.
+
+The captures demonstrate:
+
+- DNS resolution of `requestflow.test` to `10.10.30.10`
+- TCP connection establishment and HTTP traffic to the Nginx frontend
+- Blocked cross-subnet traffic
+- Firewall packet counters corresponding to permitted and denied flows
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -401,6 +506,12 @@ The versioned frontend and backend images are published to GitHub Container Regi
 | Monitoring | Prometheus, Grafana |
 | Alerting | Prometheus alert rules |
 | Container Security | Trivy |
+| Network Emulation | Containerlab |
+| Network Routing | Linux routing and static routes |
+| DNS | CoreDNS |
+| Network Firewall | iptables |
+| Network Diagnostics | tcpdump, Wireshark, curl, dig, netcat |
+| Network Automation | Bash deployment, verification, and teardown scripts |
 | CI/CD | GitHub Actions, Vercel, Render, Neon |
 | Version Control | Git and GitHub |
 
@@ -451,6 +562,15 @@ Successful behaviours tested:
 - Added Trivy container scans for both frontend and backend images with a HIGH/CRITICAL security gate.
 - Added and tested the `RequestFlowBackendDown` Prometheus alert by simulating a Kubernetes backend outage.
 - Updated the Prometheus Deployment strategy to `Recreate` to protect the single-writer TSDB persistent volume during upgrades.
+- Created separate User, Admin, Frontend, DNS, Backend, and Database subnets with Containerlab.
+- Configured CoreDNS to resolve `requestflow.test` to the routed Nginx frontend.
+- Routed Frontend-to-Backend traffic through TCP port 8000.
+- Routed Backend-to-PostgreSQL traffic through TCP port 5432.
+- Enforced a deny-by-default `iptables` forwarding policy.
+- Blocked direct User/Admin access to FastAPI and PostgreSQL.
+- Blocked direct Frontend-to-PostgreSQL access.
+- Captured DNS, HTTP, and blocked traffic with `tcpdump` and inspected it in Wireshark.
+- Added an automated verification suite with 18 passing checks covering health, routing, DNS, application readiness, firewall rules, and blocked bypass attempts.
 
 Example service request:
 
@@ -476,6 +596,10 @@ Priority: High
 - Python 3.12 or later, if running backend tests locally without Docker
 - `kubectl`, for the Kubernetes extension
 - Helm, for installing Traefik
+- WSL 2 or Linux, for the routed networking lab
+- Containerlab
+- Bash and `iptables`
+- `tcpdump` and Wireshark, for optional packet inspection
 
 ---
 
@@ -540,6 +664,7 @@ RequestFlow supports several alternative local environments. Run **one local env
 | Local frontend with deployed backend | Test the local frontend against the Render backend and Neon database | `http://localhost:5173` |
 | Production-like local stack | Test the built React application served through Nginx | `http://localhost:8080` |
 | Kubernetes | Test orchestration, persistence, monitoring, and Ingress | `http://requestflow.localhost` |
+| Routed network lab | Test routing, DNS, firewall segmentation, and controlled tier communication | `http://requestflow.test` inside the lab |
 
 The full development stack and the production-like stack both use backend port `8000` and PostgreSQL port `5432`. The full development stack and remote-backend frontend mode both use frontend port `5173`. Stop the current environment before starting another one.
 
@@ -803,6 +928,69 @@ kubectl get services -n requestflow
 kubectl get pvc -n requestflow
 kubectl get ingress -n requestflow
 ```
+
+### Routed Network Lab
+
+The routed networking lab requires WSL 2 or Linux, Docker Desktop, and Containerlab. It creates separate User, Admin, Frontend, DNS, Backend, and Database networks, and attaches the application containers to the topology as Containerlab external-container nodes.
+
+The networking lifecycle scripts are Bash scripts and should be run from WSL 2 or Linux rather than directly from Windows Command Prompt or PowerShell.
+
+#### Verify the currently deployed lab
+
+```bash
+./network-lab/containerlab/verify-network-lab.sh
+```
+
+A successful run ends with:
+
+```text
+Passed: 18
+Failed: 0
+Network lab verification completed successfully.
+```
+
+### Automated Network-Lab Lifecycle
+
+The routed network lab can be deployed and verified with:
+
+```bash
+./network-lab/containerlab/deploy-network-lab.sh
+```
+
+The deployment script validates prerequisites and configuration, rebuilds and
+starts the application containers, waits for PostgreSQL, runs Alembic
+migrations, deploys the Containerlab topology, waits for FastAPI health, and
+executes the complete network verification suite.
+
+The automated deployment completed successfully with all network checks
+passing:
+
+```text
+Passed: 18
+Failed: 0
+Network Lab verification completed successfully.
+RequestFlow network lab deployment completed successfully.
+```
+
+The environment can be removed with:
+
+```bash
+./network-lab/containerlab/destroy-network-lab.sh
+```
+
+The teardown script removes the Containerlab topology and RequestFlow
+application containers while preserving the PostgreSQL named volume:
+
+```text
+Application containers: removed
+Containerlab topology:   removed
+PostgreSQL data:         preserved
+```
+
+The deployment script was executed repeatedly to confirm that the lab can be
+recreated consistently without relying on manually retained container state.
+
+---
 
 ## Usage Examples
 
@@ -1125,28 +1313,28 @@ Push to devops-extension
 
 ---
 
-## Deployment
+## Deployment Models
 
-The application is deployed using:
+RequestFlow supports three deployment models, each demonstrating a different engineering concern.
 
-| Component | Platform |
-|---|---|
-| Frontend | Vercel |
-| Backend API | Render Web Service |
-| Database | Neon PostgreSQL |
-| CI and Security | GitHub Actions and Trivy |
+| Environment | Technologies | Purpose | Access |
+|---|---|---|---|
+| Public cloud | Vercel, Render, Neon | Live application demonstration | Public |
+| Local Kubernetes | Docker Desktop Kubernetes, Traefik, GHCR, Prometheus, Grafana | Orchestration, persistence, health checks, monitoring, and recovery | Local |
+| Routed network lab | Docker Compose, Containerlab, CoreDNS, iptables | Routing, DNS, tier segmentation, firewall enforcement, and network verification | Local |
 
-Public Deployment flow:
+### Public Cloud Deployment
 
 ```text
-Push to GitHub master branch
-→ GitHub Actions runs backend tests, run frontend component tests, frontend build, and Docker build checks
-→ Vercel redeploys the frontend
-→ Render redeploys the backend
-→ Render runs Alembic migrations and connects to Neon PostgreSQL
+Push to GitHub master
+→ GitHub Actions runs tests and build validation
+→ Vercel deploys the frontend
+→ Render deploys the backend
+→ Alembic applies database migrations
+→ Render connects to Neon PostgreSQL
 ```
 
-The DevOps extension provides a second deployment model for local infrastructure testing:
+### Local Kubernetes Deployment
 
 ```text
 GHCR images
@@ -1162,6 +1350,27 @@ Grafana → Prometheus
 
 The local Kubernetes deployment is a portfolio and learning environment. It does not replace the public Vercel and Render demonstration.
 
+### Routed Network Lab
+
+```text
+User/Admin clients
+→ CoreDNS
+→ Linux router with deny-by-default iptables policy
+→ Frontend subnet
+→ Backend subnet
+→ Database subnet
+```
+
+Permitted application traffic:
+
+```text
+User/Admin
+→ Frontend 10.10.30.10:80
+→ Backend 10.10.50.10:8000
+→ PostgreSQL 10.10.60.10:5432
+```
+
+Direct User/Admin access to the backend and database is blocked, and the frontend cannot bypass the backend to connect directly to PostgreSQL.
 
 ## API Overview
 
@@ -1259,6 +1468,16 @@ requestflow/
 │   └── verify-k8s.ps1                                  # Ingress and health verification
 │
 │
+├── network-lab/
+│   └── containerlab/
+│       ├── dns/                                        # CoreDNS image and zone configuration
+│       ├── firewall/                                   # Router iptables policy
+│       ├── postgres/                                   # PostgreSQL network-lab image
+│       ├── evidence/                                   # DNS, firewall, packet, and routed-tier evidence
+│       ├── requestflow.clab.yml                        # Routed network topology
+│       ├── docker-compose.network-lab.yml              # Network-lab Compose override
+│       └── verify-network-lab.sh                           # Automated network verification
+│
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                                      # Test and build validation
@@ -1270,17 +1489,21 @@ requestflow/
 │   │   ├── user-requests.png
 │   │   ├── admin-request-detail.png
 │   │   └── api-documentation.png
-│   └── devops/
-│       ├── kubernetes-before-recreation.png
-│       ├── kubernetes-clean-deployment.png
-│       ├── kubernetes-verification.png
-│       ├── prometheus-targets.png
-│       ├── prometheus-backend-down-alert.png
-│       ├── grafana-dashboard.png
-│       ├── grafana-datasource.png
-│       ├── github-actions-publish.png
-│       ├── github-actions-trivy.png
-│       └── ghcr-packages.png
+│   ├── devops/
+│   │   ├── kubernetes-before-recreation.png
+│   │   ├── kubernetes-clean-deployment.png
+│   │   ├── kubernetes-verification.png
+│   │   ├── prometheus-targets.png
+│   │   ├── prometheus-backend-down-alert.png
+│   │   ├── grafana-dashboard.png
+│   │   ├── grafana-datasource.png
+│   │   ├── github-actions-publish.png
+│   │   ├── github-actions-trivy.png
+│   │   └── ghcr-packages.png
+│   └── networking/
+│       ├── routed-network-topology.png
+│       ├── network-lab-verification.png
+│       └── network-firewall-counters.png
 │
 ├── docker-compose.yml                                  # Local frontend, backend, and PostgreSQL setup
 ├── docker-compose.prod-local.yml                       # Production-style local Nginx stack
@@ -1308,6 +1531,11 @@ requestflow/
 - Kubernetes secrets are managed through a local ignored manifest rather than an external secret manager.
 - The Ingress currently uses local HTTP rather than trusted HTTPS.
 - Prometheus and Grafana are configured for local monitoring; the alert rule is evaluated successfully, but no Alertmanager notification receiver is configured.
+- The routed network lab runs locally through Docker Desktop and WSL 2 rather than on physical network devices.
+- The lab uses static IPv4 addresses and routes for reproducibility.
+- The network-lab HTTP path is unencrypted and intended only for local testing.
+- Containerlab deployment requires Linux or WSL 2 and is not intended to run directly through Windows Command Prompt.
+- Network verification runs locally because it requires privileged container networking.
 
 ### Future Improvements
 
@@ -1322,7 +1550,9 @@ requestflow/
 - Improve UI styling with a component library or design system.
 - Add Kubernetes NetworkPolicies between frontend, backend, PostgreSQL, Prometheus, and Grafana.
 - Add TLS/HTTPS termination for Traefik.
-- Create a separate networking or cloud branch for cloud VM or managed Kubernetes deployment.
+- Evaluate Kubernetes NetworkPolicies against the segmentation rules demonstrated in Containerlab.
+- Add TLS for encrypted client-to-frontend traffic in the routed network lab.
+- Run network verification on a suitable self-hosted CI runner.
 - Optionally package the Kubernetes resources with Kustomize or Helm.
 - Run clean-state Kubernetes deployment verification automatically in CI using an ephemeral test cluster.
 - Add Alertmanager with email, Slack, or another external notification receiver.
@@ -1345,7 +1575,7 @@ Admins are able to view and manage all requests, so this role should only be giv
 
 ## About the Author
 
-**Keith Lua** - [LinkedIn](https://www.linkedin.com/in/keith-lua) | [Github](https://github.com/keith800x/)
+**Keith Lua** - [LinkedIn](https://www.linkedin.com/in/keith-lua) | [GitHub](https://github.com/keith800x/)
 
 ---
 
