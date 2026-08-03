@@ -9,7 +9,7 @@ PROJECT_NAME="requestflow-net"
 BASE_COMPOSE="$REPO_ROOT/docker-compose.prod-local.yml"
 LAB_COMPOSE="$SCRIPT_DIR/docker-compose.network-lab.yml"
 TOPOLOGY="$SCRIPT_DIR/requestflow.clab.yml"
-VERIFY_SCRIPT="$SCRIPT_DIR/verify-phase2f.sh"
+VERIFY_SCRIPT="$SCRIPT_DIR/verify-network-lab.sh"
 
 FRONTEND_CONTAINER="requestflow-net-frontend"
 BACKEND_CONTAINER="requestflow-net-backend"
@@ -37,7 +37,7 @@ show_diagnostics() {
   set +e
 
   printf '\n============================================================\n'
-  printf ' Phase 2G deployment failed — diagnostics\n'
+  printf ' RequestFlow network lab deployment failed — diagnostics\n'
   printf '============================================================\n'
 
   "${COMPOSE[@]}" ps -a
@@ -52,7 +52,7 @@ show_diagnostics() {
   sudo containerlab inspect -t "$TOPOLOGY" 2>&1 || true
 
   printf '\nThe failed environment has been left running for debugging.\n'
-  printf 'Run %s/destroy-phase2g.sh when finished.\n' "$SCRIPT_DIR"
+  printf 'Run %s/destroy-network-lab.sh when finished.\n' "$SCRIPT_DIR"
 
   exit "$exit_code"
 }
@@ -203,7 +203,7 @@ log "Validating Docker Compose configuration."
 log "Validating shell scripts."
 
 bash -n "$VERIFY_SCRIPT"
-bash -n "$SCRIPT_DIR/destroy-phase2g.sh"
+bash -n "$SCRIPT_DIR/destroy-network-lab.sh"
 
 log "Removing any existing Containerlab deployment."
 
@@ -234,7 +234,7 @@ log "Waiting for FastAPI to become healthy after eth1 is attached."
 
 wait_for_health "$BACKEND_CONTAINER" 120
 
-log "Running the complete Phase 2F network verification."
+log "Running the complete Network Lab verification."
 
 "$VERIFY_SCRIPT"
 
@@ -247,7 +247,7 @@ log "Final Containerlab status."
 sudo containerlab inspect -t "$TOPOLOGY"
 
 printf '\n============================================================\n'
-printf ' Phase 2G deployment completed successfully\n'
+printf ' RequestFlow network lab deployment completed successfully\n'
 printf '============================================================\n'
 printf 'Application URL inside the lab: http://requestflow.test\n'
 printf 'Verification script: %s\n' "$VERIFY_SCRIPT"

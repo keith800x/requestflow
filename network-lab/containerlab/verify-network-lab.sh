@@ -60,7 +60,7 @@ expect_blocked() {
 }
 
 echo "============================================================"
-echo " RequestFlow Phase 2F Verification"
+echo " RequestFlow Network Lab Verification"
 echo "============================================================"
 echo
 
@@ -165,5 +165,5 @@ if (( FAIL_COUNT > 0 )); then
   exit 1
 fi
 
-echo "Phase 2F verification completed successfully."
+echo "Network lab verification completed successfully."
 

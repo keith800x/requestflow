@@ -81,7 +81,7 @@ else
 fi
 
 printf '\n============================================================\n'
-printf ' Phase 2G teardown completed\n'
+printf ' RequestFlow network lab teardown completed successfully\n'
 printf '============================================================\n'
 printf 'Application containers: removed\n'
 printf 'Containerlab topology:   removed\n'
