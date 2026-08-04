@@ -3,6 +3,7 @@ set -uo pipefail
 
 USER_CLIENT="clab-requestflow-app-user-client"
 ADMIN_CLIENT="clab-requestflow-app-admin-client"
+DNS_SERVER="clab-requestflow-app-dns-server"
 ROUTER="clab-requestflow-app-router"
 
 FRONTEND="requestflow-net-frontend"
@@ -23,6 +24,33 @@ cleanup() {
 }
 
 trap cleanup EXIT
+
+required_running_containers=(
+  "$FRONTEND"
+  "$BACKEND"
+  "$POSTGRES"
+  "$USER_CLIENT"
+  "$ADMIN_CLIENT"
+  "$DNS_SERVER"
+  "$ROUTER"
+)
+
+for container in "${required_running_containers[@]}"; do
+  if ! docker inspect "$container" >/dev/null 2>&1; then
+    echo "ERROR: Required container does not exist: $container"
+    echo "Run ./network-lab/containerlab/deploy-network-lab.sh first."
+    exit 1
+  fi
+
+  state="$(docker inspect --format '{{.State.Status}}' "$container")"
+
+  if [[ "$state" != "running" ]]; then
+    echo "ERROR: Required container is not running: $container"
+    echo "Current state: $state"
+    echo "Run ./network-lab/containerlab/deploy-network-lab.sh first."
+    exit 1
+  fi
+done
 
 pass() {
   printf 'PASS: %s\n' "$1"
@@ -104,6 +132,21 @@ check "Admin can reach the complete application path" \
   docker exec "$ADMIN_CLIENT" \
   curl -fsS "http://requestflow.test/api/ready"
 
+check "User uses DNS instead of a manual hosts entry" \
+  docker exec "$USER_CLIENT" sh -c \
+  "! grep -Eqi 'requestflow\.(test|local)' /etc/hosts"
+
+check "Admin uses DNS instead of a manual hosts entry" \
+  docker exec "$ADMIN_CLIENT" sh -c \
+  "! grep -Eqi 'requestflow\.(test|local)' /etc/hosts"
+
+expect_blocked "User cannot access Admin subnet directly" \
+  docker exec "$USER_CLIENT" \
+  ping -c 1 -W 1 10.10.20.21
+
+expect_blocked "Admin cannot access User subnet directly" \
+  docker exec "$ADMIN_CLIENT" \
+  ping -c 1 -W 1 10.10.10.21
 expect_blocked "User cannot access Backend directly" \
   docker exec "$USER_CLIENT" \
   curl -fsS --connect-timeout 2 --max-time 2 \
