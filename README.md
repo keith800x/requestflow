@@ -935,6 +935,20 @@ The routed networking lab requires WSL 2 or Linux, Docker Desktop, and Container
 
 The networking lifecycle scripts are Bash scripts and should be run from WSL 2 or Linux rather than directly from Windows Command Prompt or PowerShell.
 
+From Windows Command Prompt, open the WSL distribution used for the lab:
+
+```cmd
+wsl -d Containerlab
+```
+
+Then, from inside WSL, change to the project directory:
+
+```bash
+cd ~/requestflow
+```
+
+The commands below assume they are run from this directory. If your WSL distribution or repository path uses a different name, substitute the appropriate values.
+
 #### Verify the currently deployed lab
 
 ```bash
@@ -944,7 +958,7 @@ The networking lifecycle scripts are Bash scripts and should be run from WSL 2 o
 A successful run ends with:
 
 ```text
-Passed: 18
+Passed: 22
 Failed: 0
 Network lab verification completed successfully.
 ```
@@ -966,7 +980,7 @@ The automated deployment completed successfully with all network checks
 passing:
 
 ```text
-Passed: 18
+Passed: 22
 Failed: 0
 Network Lab verification completed successfully.
 RequestFlow network lab deployment completed successfully.
